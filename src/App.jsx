@@ -118,6 +118,12 @@ function urgencyOf(s){const d=days(s.due_date);if(s.pay_status==="Paid")return n
 function fA(n){return n==null?"—":"₹"+n.toLocaleString("en-IN");}
 function fN(n){return n==null?"—":n.toLocaleString("en-IN");}
 
+function downloadCSV(filename,headers,rows){
+  const esc=v=>{const s=v==null?"":String(v);return s.includes(",")||s.includes('"')||s.includes("\n")?`"${s.replace(/"/g,'""')}"`  :s;};
+  const csv=[headers,...rows].map(r=>r.map(esc).join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=filename;a.click();
+}
+
 function Card({label,value,sub,color}){
   return <div style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"0.8rem 1rem"}}>
     <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:3}}>{label}</div>
@@ -335,7 +341,10 @@ export default function App(){
             </ResponsiveContainer>
           </div>
         </div>
-        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>State-wise Summary</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>State-wise Summary</div>
+          <button onClick={()=>downloadCSV("state-summary.csv",["State","Stores","Uploaded","Upload %","Paid","Amount"],byState.map(s=>[s.state,s.total,s.uploaded,Math.round(s.uploaded/s.total*100)+"%",s.paid,s.amount||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+        </div>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead><tr>{["State","Stores","Uploaded","Upload %","Paid","Amount"].map(h=><TH key={h} right={!["State"].includes(h)}>{h}</TH>)}</tr></thead>
@@ -356,6 +365,9 @@ export default function App(){
         {alertCount>0&&<div style={{background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
           <span style={{color:"#A32D2D",fontWeight:500}}>⚠ {alertCount} stores</span><span style={{color:"#791F1F"}}> have payment due within 5 days and are still pending</span>
         </div>}
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+          <button onClick={()=>{const rows=filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map(s=>{const d=days(s.due_date);return[s.state,s.store,s.responsible,s.due_date,d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`,s.has_invoice?"Uploaded":"Missing",s.pay_status];});downloadCSV("due-alerts.csv",["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"],rows);}} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+        </div>
         <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead><tr>{["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
@@ -382,7 +394,11 @@ export default function App(){
       </div>}
 
       {/* ── Tab 2: Tracker ─────────────────────────── */}
-      {tab===2&&<div style={{overflowX:"auto"}}>
+      {tab===2&&<div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+          <button onClick={()=>downloadCSV("tracker.csv",["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment"],filtered.map(s=>[s.state,s.store,s.responsible,s.due_date||"",s.units||"",s.amount||"",s.has_invoice?"Uploaded":"Missing",s.pay_status]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+        </div>
+        <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead><tr>{["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment","Notes"].map(h=><TH key={h} right={["Units","Amount"].includes(h)}>{h}</TH>)}</tr></thead>
           <tbody>{filtered.map((s,i)=>(
@@ -401,6 +417,7 @@ export default function App(){
             </tr>
           ))}</tbody>
         </table>
+        </div>
       </div>}
 
       {/* ── Tab 3: Payments ────────────────────────── */}
@@ -449,7 +466,10 @@ export default function App(){
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>May vs April — Store-wise</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>May vs April — Store-wise</div>
+          <button onClick={()=>downloadCSV("mom-comparison.csv",["Store","State","Apr Units","May Units","Change","% Change","Apr Amount","May Amount"],momData.map(s=>[s.full,s.state,s.apr,s.may,s.chg,s.pct+"%",s.aprA||"",s.mayA||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+        </div>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead><tr>{["Store","State","Apr Units","May Units","Change","% Chg","Apr Amt","May Amt"].map(h=><TH key={h} right={!["Store","State"].includes(h)}>{h}</TH>)}</tr></thead>
@@ -487,7 +507,10 @@ export default function App(){
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>High-Rate Stores (Above ₹{Math.round(highThr)}/unit)</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>High-Rate Stores (Above ₹{Math.round(highThr)}/unit)</div>
+          <button onClick={()=>downloadCSV("high-bills.csv",["State","Store","Units","Amount","Rate per Unit (₹)","vs Avg"],perUnit.filter(s=>s.pu>highThr).map(s=>[s.state,s.store,s.units,s.amount,s.pu,"+"+Math.round((s.pu-avgPU)/avgPU*100)+"%"]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+        </div>
         <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
             <thead><tr>{["State","Store","Units","Amount","₹/Unit","vs Avg","Action"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
