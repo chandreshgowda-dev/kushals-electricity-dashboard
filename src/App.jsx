@@ -1,0 +1,655 @@
+import { useState, useMemo } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
+
+const TODAY = new Date("2026-05-22");
+
+const STORES = [
+  { state:"Andhra Pradesh", store:"VJW - GAYATHRI NAGAR",        responsible:"THARUN",  due_date:"2026-05-20", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"VIG - SIRIPURAM",              responsible:"CHETHAN", due_date:"2026-05-16", units:null,  amount:56392,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"RJM - DANVAIPETA",             responsible:"CHETHAN", due_date:"2026-05-18", units:6371,  amount:61393,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"GTR - LAXMIPURAM",             responsible:"CHETHAN", due_date:"2026-05-20", units:4449,  amount:40688,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"TRP - AIR ROAD",               responsible:"CHETHAN", due_date:"2026-05-16", units:5060,  amount:56120,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"VJN - SRINIVASA NAGAR",        responsible:"CHETHAN", due_date:"2026-05-17", units:5444,  amount:52245,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"KKN - RAMA KRISHNARAO PET",    responsible:"CHETHAN", due_date:"2026-05-20", units:5991,  amount:57583,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"NLR - MINI BYPASS ROAD",       responsible:"CHETHAN", due_date:"2026-05-18", units:4855,  amount:46365,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"ONG - M M ROAD",               responsible:"CHETHAN", due_date:"2026-05-19", units:1776,  amount:37010,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"VJW - M G ROAD",               responsible:"CHETHAN", due_date:"2026-05-18", units:6506,  amount:67154,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"VIG - MADHURWADA",             responsible:"CHETHAN", due_date:"2026-05-15", units:6284,  amount:66284,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"BIM-JP ROAD",                  responsible:"CHETHAN", due_date:"2026-05-30", units:6280,  amount:64493,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"Ananthpur",                    responsible:"CHETHAN", due_date:"2026-05-16", units:4487,  amount:46269,  has_invoice:false, pay_status:"Paid" },
+  { state:"Andhra Pradesh", store:"KRL - BHAGYA NAGAR",           responsible:"CHETHAN", due_date:"2026-04-16", units:8286,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Assam",          store:"GWT - G S ROAD",               responsible:"CHETHAN", due_date:"2026-05-25", units:4177,  amount:50000,  has_invoice:false, pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - MALLESWARAM",            responsible:"CHETHAN", due_date:"2026-05-15", units:3950,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - JAYNAGAR 4th block",     responsible:"CHETHAN", due_date:"2026-05-26", units:5277,  amount:47976,  has_invoice:false, pay_status:"Pending" },
+  { state:"Karnataka",      store:"MYS - DEVRAJ URS ROAD",        responsible:"CHETHAN", due_date:"2026-05-15", units:4950,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Karnataka",      store:"BLR - BASAWESHWAR NAGAR",      responsible:"CHETHAN", due_date:"2026-05-15", units:3805,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - INDIRANAGAR",            responsible:"CHETHAN", due_date:"2026-05-15", units:4740,  amount:46662,  has_invoice:false, pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - SAHAKARNAGAR",           responsible:"CHETHAN", due_date:"2026-05-10", units:4709,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - HENNUR ROAD",            responsible:"CHETHAN", due_date:"2026-05-15", units:4920,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - ARS COMPLEX MALLESHWARAM",responsible:"CHETHAN",due_date:"2026-05-08", units:2711,  amount:27609,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"UDP - MAIN MARKET",            responsible:"CHETHAN", due_date:"2026-05-15", units:4827,  amount:47511,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"MGL - BALMATTA",               responsible:"CHETHAN", due_date:"2026-05-16", units:1974,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Karnataka",      store:"MGL-NEXUS FIZA MALL",          responsible:"THARUN",  due_date:"2026-05-14", units:1679,  amount:21171,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - HSR LAYOUT",             responsible:"CHETHAN", due_date:"2026-05-17", units:4681,  amount:45377,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"Belgaum Thilakwadi",           responsible:"CHETHAN", due_date:"2026-05-22", units:7460,  amount:65694,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - DVG ROAD",               responsible:"CHETHAN", due_date:null,         units:4213,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - RR NAGAR",               responsible:"CHETHAN", due_date:null,         units:3680,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"BLR - KAMMANAHALLI",           responsible:"THARUN",  due_date:"2026-05-15", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Karnataka",      store:"HBL - KOPPIKAR ROAD",          responsible:"THARUN",  due_date:"2026-05-13", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Kerala",         store:"KCH - LULU MALL",              responsible:"CHETHAN", due_date:"2026-05-11", units:2562,  amount:28864,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Kerala",         store:"KCH - MG ROAD",                responsible:"CHETHAN", due_date:"2026-05-12", units:3480,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Madhya Pradesh", store:"IDR - SNEH NAGAR",             responsible:"CHETHAN", due_date:"2026-05-18", units:3505,  amount:32448,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Maharashtra",    store:"PUN - PHOENIX MALL VIMAN NAGAR",responsible:"CHETHAN",due_date:"2026-05-29", units:2374,  amount:67730,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Maharashtra",    store:"PUNMLM - MALL OF THE MILLENNIUM",responsible:"CHETHAN",due_date:"2026-05-24",units:3049,  amount:40810,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Maharashtra",    store:"PUN - KOREGAON PARK",          responsible:"CHETHAN", due_date:"2026-05-25", units:4601,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Maharashtra",    store:"PUN - WESTEND MALL",           responsible:"CHETHAN", due_date:"2026-05-26", units:2012,  amount:27380,  has_invoice:false, pay_status:"Paid" },
+  { state:"Maharashtra",    store:"PUN - SOLITAIRE BUSINESS HUB", responsible:"CHETHAN", due_date:"2026-05-26", units:12876, amount:493950, has_invoice:true,  pay_status:"Paid" },
+  { state:"Maharashtra",    store:"MUM - PHOENIX MARKET CITY",    responsible:"CHETHAN", due_date:"2026-05-27", units:1213,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Tamil Nadu",     store:"CBT - RS PURAM",               responsible:"CHETHAN", due_date:"2026-05-18", units:9769,  amount:120791, has_invoice:true,  pay_status:"Paid" },
+  { state:"Tamil Nadu",     store:"CHN-PAPERMILL ROAD",           responsible:"CHETHAN", due_date:"2026-05-26", units:8374,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Tamil Nadu",     store:"Tirchi Bypass Road",           responsible:"CHETHAN", due_date:"2026-06-01", units:4941,  amount:66359,  has_invoice:false, pay_status:"Paid" },
+  { state:"Tamil Nadu",     store:"CHN - T NAGAR",                responsible:"CHETHAN", due_date:"2026-04-15", units:6800,  amount:84725,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Tamil Nadu",     store:"SLM - SARADA COLLEGE ROAD",    responsible:"CHETHAN", due_date:"2026-04-13", units:9761,  amount:117057, has_invoice:true,  pay_status:"Paid" },
+  { state:"Tamil Nadu",     store:"CHN - ADYAR",                  responsible:"CHETHAN", due_date:"2026-04-27", units:6750,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Delhi",          store:"KAMALANAGAR",                  responsible:"CHETHAN", due_date:"2026-05-16", units:3457,  amount:49230,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"HYD - DSL VIRTUE MALL",        responsible:"THARUN",  due_date:"2026-05-12", units:2333,  amount:34549,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"HYD - JUBILEE HILLS",          responsible:"CHETHAN", due_date:"2026-05-16", units:7153,  amount:77883,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"HYD - ATTAPUR",                responsible:"CHETHAN", due_date:"2026-05-21", units:4489,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Telangana",      store:"HYD - KOTHAPET",               responsible:"CHETHAN", due_date:"2026-05-04", units:4370,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Telangana",      store:"HYD - AS RAO NAGAR",           responsible:"CHETHAN", due_date:"2026-05-17", units:5211,  amount:null,   has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"HYD - VANATSALIPURAM",         responsible:"CHETHAN", due_date:"2026-05-21", units:4489,  amount:46469,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"KRM - AMBEDKAR ROAD",          responsible:"CHETHAN", due_date:"2026-05-15", units:3923,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Telangana",      store:"WRL - NAIM NAGAR",             responsible:"CHETHAN", due_date:"2026-05-20", units:7043,  amount:79973,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"KHM - WYRA ROAD",              responsible:"CHETHAN", due_date:"2026-05-29", units:7109,  amount:179834, has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"NALAGANDLA",                   responsible:"CHETHAN", due_date:"2026-05-19", units:3718,  amount:34246,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"Kokapet",                      responsible:"CHETHAN", due_date:"2026-05-16", units:4172,  amount:47160,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"KONDAPUR",                     responsible:"CHETHAN", due_date:"2026-05-14", units:2737,  amount:34280,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"HYD-PKL",                      responsible:"CHETHAN", due_date:"2026-05-19", units:4649,  amount:47637,  has_invoice:true,  pay_status:"Paid" },
+  { state:"Telangana",      store:"NZM - PRAGATHI NAGAR",         responsible:"CHETHAN", due_date:null,         units:6098,  amount:69977,  has_invoice:false, pay_status:"Paid" },
+  { state:"Telangana",      store:"Kukatpally",                   responsible:"CHETHAN", due_date:"2026-04-16", units:5457,  amount:null,   has_invoice:true,  pay_status:"Pending" },
+  { state:"Puducherry",     store:"PDC - MISSION STREET",         responsible:"CHETHAN", due_date:"2026-05-21", units:3630,  amount:49803,  has_invoice:true,  pay_status:"Pending" },
+];
+
+const APR = {
+  "RJM - DANVAIPETA":{units:7493,amount:82554},"GTR - LAXMIPURAM":{units:5353,amount:58746},
+  "TRP - AIR ROAD":{units:5288,amount:60960},"VJN - SRINIVASA NAGAR":{units:5429,amount:57436},
+  "KKN - RAMA KRISHNARAO PET":{units:5613,amount:61018},"NLR - MINI BYPASS ROAD":{units:4438,amount:44301},
+  "VJW - M G ROAD":{units:5864,amount:81107},"VIG - MADHURWADA":{units:7035,amount:75272},
+  "BLR - MALLESWARAM":{units:3680,amount:36393},"BLR - INDIRANAGAR":{units:3900,amount:38393},
+  "BLR - ARS COMPLEX MALLESHWARAM":{units:2703,amount:24532},"UDP - MAIN MARKET":{units:4774,amount:39628},
+  "MGL - BALMATTA":{units:1762,amount:19539},"MGL-NEXUS FIZA MALL":{units:1842,amount:21671},
+  "BLR - HSR LAYOUT":{units:8018,amount:41573},"KCH - LULU MALL":{units:2573,amount:29007},
+  "IDR - SNEH NAGAR":{units:3229,amount:29152},"PUN - PHOENIX MALL VIMAN NAGAR":{units:2103,amount:28410},
+  "PUNMLM - MALL OF THE MILLENNIUM":{units:3456,amount:46450},"PUN - WESTEND MALL":{units:1959,amount:26920},
+  "PUN - SOLITAIRE BUSINESS HUB":{units:11402,amount:225170},"CBT - RS PURAM":{units:9769,amount:120791},
+  "CHN - T NAGAR":{units:6800,amount:84725},"HYD - DSL VIRTUE MALL":{units:3227,amount:46875},
+  "HYD - JUBILEE HILLS":{units:5498,amount:65878},"HYD - VANATSALIPURAM":{units:3728,amount:45765},
+  "KHM - WYRA ROAD":{units:8625,amount:98188},"NALAGANDLA":{units:3718,amount:34246},
+  "Kokapet":{units:1471,amount:19771},"NZM - PRAGATHI NAGAR":{units:4964,amount:57472},
+  "WRL - NAIM NAGAR":{units:6283,amount:71613},"KAMALANAGAR":{units:3200,amount:45000},
+};
+
+const TREND = [
+  {month:"Oct-25",uploaded:38,paid:32,units:142000,amount:1820000},
+  {month:"Nov-25",uploaded:41,paid:35,units:149000,amount:1940000},
+  {month:"Dec-25",uploaded:39,paid:33,units:138000,amount:1780000},
+  {month:"Jan-26",uploaded:44,paid:38,units:151000,amount:1990000},
+  {month:"Feb-26",uploaded:47,paid:41,units:155000,amount:2050000},
+  {month:"Mar-26",uploaded:49,paid:43,units:162000,amount:2140000},
+  {month:"Apr-26",uploaded:52,paid:46,units:168000,amount:2230000},
+  {month:"May-26",uploaded:58,paid:51,units:178000,amount:2380000},
+];
+
+const STATE_CLR = {"Andhra Pradesh":"#378ADD","Karnataka":"#1D9E75","Kerala":"#D4537E","Tamil Nadu":"#BA7517","Telangana":"#7F77DD","Maharashtra":"#D85A30","Madhya Pradesh":"#639922","Delhi":"#888780","Assam":"#63340A","Puducherry":"#993556"};
+
+const URGENCY = {
+  overdue: {label:"Overdue",        color:"#A32D2D",bg:"#FCEBEB",border:"#F09595",icon:"🔴",p:0},
+  today:   {label:"Due Today",      color:"#7B1818",bg:"#FCE4E4",border:"#EB8585",icon:"🚨",p:1},
+  critical:{label:"Due in 1–2 Days",color:"#D85A30",bg:"#FDF0E8",border:"#F5B47A",icon:"🟠",p:2},
+  warning: {label:"Due in 3–5 Days",color:"#BA7517",bg:"#FEF7E8",border:"#F5D27A",icon:"🟡",p:3},
+  upcoming:{label:"Due in 6–10 Days",color:"#3A6012",bg:"#EEF7E5",border:"#A3D46A",icon:"🟢",p:4},
+};
+
+const TABS = ["Overview","Due Alerts","Tracker","Payments","MoM","High Bills","🔔 Reminders"];
+
+// ── helpers ──────────────────────────────────────────
+function days(due){if(!due)return null;return Math.ceil((new Date(due)-TODAY)/86400000);}
+function urgencyOf(s){const d=days(s.due_date);if(s.pay_status==="Paid")return null;if(d===null)return null;if(d<0)return"overdue";if(d===0)return"today";if(d<=2)return"critical";if(d<=5)return"warning";if(d<=10)return"upcoming";return null;}
+function fA(n){return n==null?"—":"₹"+n.toLocaleString("en-IN");}
+function fN(n){return n==null?"—":n.toLocaleString("en-IN");}
+
+function Card({label,value,sub,color}){
+  return <div style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"0.8rem 1rem"}}>
+    <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:3}}>{label}</div>
+    <div style={{fontSize:22,fontWeight:500,color:color||"var(--color-text-primary)",lineHeight:1.1}}>{value}</div>
+    {sub&&<div style={{fontSize:10,color:"var(--color-text-tertiary)",marginTop:2}}>{sub}</div>}
+  </div>;
+}
+function Tag({t,v}){
+  const m={paid:{bg:"#EAF3DE",c:"#3B6D11"},pending:{bg:"#FAEEDA",c:"#854F0B"},overdue:{bg:"#FCEBEB",c:"#A32D2D"},upload:{bg:"#E6F1FB",c:"#185FA5"},miss:{bg:"#F1EFE8",c:"#5F5E5A"}};
+  const s=m[t]||m.miss;
+  return <span style={{background:s.bg,color:s.c,fontSize:11,padding:"2px 7px",borderRadius:10,fontWeight:500,whiteSpace:"nowrap"}}>{v}</span>;
+}
+function TH({children,right}){return <th style={{textAlign:right?"right":"left",fontWeight:500,fontSize:10,color:"var(--color-text-secondary)",padding:"5px 8px",borderBottom:"0.5px solid var(--color-border-tertiary)",textTransform:"uppercase",letterSpacing:".04em",whiteSpace:"nowrap"}}>{children}</th>;}
+function TD({children,right,style={}}){return <td style={{padding:"6px 8px",borderBottom:"0.5px solid var(--color-border-tertiary)",textAlign:right?"right":"left",...style}}>{children}</td>;}
+
+async function apiMsg(store,type){
+  const d=days(store.due_date);
+  const dueStr=store.due_date?new Date(store.due_date).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"soon";
+  const overdue=d!==null&&d<0?Math.abs(d):0;
+  const prompt=`You are writing a professional ${type==="whatsapp"?"WhatsApp":"email"} reminder from Kushals jewellery head office.
+Store: ${store.store} (${store.state}) | Responsible: ${store.responsible} | Due: ${dueStr}
+${overdue>0?"OVERDUE by "+overdue+" days — electricity disconnection risk.":"Days left: "+(d??"")}
+Invoice uploaded: ${store.has_invoice?"Yes":"No — must be uploaded NOW"}
+Amount: ${store.amount?"₹"+store.amount.toLocaleString("en-IN"):"not entered"} | Units: ${store.units?store.units+" kWh":"not entered"}
+Write a short ${type==="whatsapp"?"WhatsApp message (emojis ok, under 100 words)":"email body (professional, under 120 words)"} asking them to ${!store.has_invoice?"upload invoice and":"confirm"} complete payment. Output message text only.`;
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:prompt}]})});
+  const data=await res.json();
+  return data.content?.[0]?.text||"Could not generate message.";
+}
+
+async function sendEmail(to,subject,body){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:`Send email to ${to}, subject: "${subject}", body: ${body}`}],mcp_servers:[{type:"url",url:"https://gmailmcp.googleapis.com/mcp/v1",name:"gmail"}]})});
+  const data=await res.json();
+  const tool=data.content?.find(b=>b.type==="mcp_tool_result");
+  const txt=data.content?.find(b=>b.type==="text");
+  return{success:!!(tool||(txt?.text?.toLowerCase().includes("sent")))};
+}
+
+// ── Main ─────────────────────────────────────────────
+export default function App(){
+  const [tab,setTab]=useState(0);
+  const [stateF,setStateF]=useState("All");
+  const [respF,setRespF]=useState("All");
+
+  // Reminder state
+  const [contacts,setContacts]=useState({CHETHAN:"",THARUN:""});
+  const [waNum,setWaNum]=useState({CHETHAN:"",THARUN:""});
+  const [msgType,setMsgType]=useState("whatsapp");
+  const [msgCache,setMsgCache]=useState({});
+  const [sending,setSending]=useState({});
+  const [sent,setSent]=useState({});
+  const [selected,setSelected]=useState({});
+  const [expanded,setExpanded]=useState(null);
+  const [copied,setCopied]=useState({});
+  const [batchBusy,setBatchBusy]=useState(false);
+  const [batchRes,setBatchRes]=useState(null);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+
+  const states=useMemo(()=>["All",...new Set(STORES.map(s=>s.state))].sort(),[]);
+  const filtered=useMemo(()=>STORES.filter(s=>(stateF==="All"||s.state===stateF)&&(respF==="All"||s.responsible===respF)),[stateF,respF]);
+
+  // metrics
+  const total=STORES.length, uploaded=STORES.filter(s=>s.has_invoice).length,
+        paid=STORES.filter(s=>s.pay_status==="Paid").length, pending=STORES.filter(s=>s.pay_status==="Pending").length,
+        overdue=STORES.filter(s=>{const d=days(s.due_date);return d!==null&&d<0&&s.pay_status==="Pending";}).length,
+        totalAmt=STORES.filter(s=>s.amount).reduce((a,s)=>a+s.amount,0);
+  const alertCount=STORES.filter(s=>{const d=days(s.due_date);return d!==null&&d>=0&&d<=5&&s.pay_status==="Pending";}).length;
+
+  const byState=useMemo(()=>{
+    const m={};
+    STORES.forEach(s=>{if(!m[s.state])m[s.state]={state:s.state,total:0,uploaded:0,paid:0,units:0,amount:0};
+      m[s.state].total++;if(s.has_invoice)m[s.state].uploaded++;if(s.pay_status==="Paid")m[s.state].paid++;
+      if(s.units)m[s.state].units+=s.units;if(s.amount)m[s.state].amount+=s.amount;});
+    return Object.values(m).sort((a,b)=>b.amount-a.amount);
+  },[]);
+
+  const momData=useMemo(()=>STORES.filter(s=>s.units&&APR[s.store]).map(s=>({
+    store:s.store.length>20?s.store.slice(0,18)+"…":s.store,full:s.store,state:s.state,
+    may:s.units,apr:APR[s.store].units,mayA:s.amount||0,aprA:APR[s.store].amount||0,
+    chg:s.units-APR[s.store].units,pct:Math.round(((s.units-APR[s.store].units)/APR[s.store].units)*100),
+  })).sort((a,b)=>b.pct-a.pct),[]);
+
+  const perUnit=useMemo(()=>STORES.filter(s=>s.units>100&&s.amount).map(s=>({...s,pu:Math.round(s.amount/s.units)})).sort((a,b)=>b.pu-a.pu),[]);
+  const avgPU=perUnit.length?Math.round(perUnit.reduce((a,s)=>a+s.pu,0)/perUnit.length):0;
+  const highThr=avgPU*1.3;
+
+  const pieData=[
+    {name:"Uploaded & Paid",value:STORES.filter(s=>s.has_invoice&&s.pay_status==="Paid").length,color:"#1D9E75"},
+    {name:"Uploaded, Pending",value:STORES.filter(s=>s.has_invoice&&s.pay_status==="Pending").length,color:"#BA7517"},
+    {name:"No Invoice, Paid",value:STORES.filter(s=>!s.has_invoice&&s.pay_status==="Paid").length,color:"#378ADD"},
+    {name:"No Invoice, Pending",value:STORES.filter(s=>!s.has_invoice&&s.pay_status==="Pending").length,color:"#E24B4A"},
+  ];
+
+  // reminder helpers
+  const needsReminder=useMemo(()=>STORES.map(s=>({...s,urgency:urgencyOf(s),d:days(s.due_date)})).filter(s=>s.urgency).sort((a,b)=>{const pa=URGENCY[a.urgency]?.p??99,pb=URGENCY[b.urgency]?.p??99;return pa-pb||(a.d??99)-(b.d??99);}),[]);
+  const grouped=useMemo(()=>{const g={};needsReminder.forEach(s=>{if(!g[s.urgency])g[s.urgency]=[];g[s.urgency].push(s);});return g;},[needsReminder]);
+  const selCount=Object.values(selected).filter(Boolean).length;
+
+  async function loadMsg(store){
+    const key=store.store+msgType;
+    if(msgCache[key])return;
+    setMsgCache(p=>({...p,[key]:"loading"}));
+    const m=await apiMsg(store,msgType);
+    setMsgCache(p=>({...p,[key]:m}));
+  }
+  async function toggleExpand(store){
+    if(expanded===store.store){setExpanded(null);return;}
+    setExpanded(store.store);loadMsg(store);
+  }
+  async function handleSend(store){
+    const email=contacts[store.responsible];
+    if(!email){alert(`Add ${store.responsible}'s email in Settings.`);return;}
+    const key=store.store,mk=store.store+"email";
+    let msg=msgCache[mk];
+    if(!msg||msg==="loading"){msg=await apiMsg(store,"email");setMsgCache(p=>({...p,[mk]:msg}));}
+    setSending(p=>({...p,[key]:true}));
+    const dueStr=store.due_date?new Date(store.due_date).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"soon";
+    const res=await sendEmail(email,`[Kushals] EB Reminder – ${store.store} (Due ${dueStr})`,msg);
+    setSending(p=>({...p,[key]:false}));setSent(p=>({...p,[key]:res.success?"sent":"failed"}));
+  }
+  async function batchSend(){
+    const sel=needsReminder.filter(s=>selected[s.store]);
+    if(!sel.length){alert("Select stores first.");return;}
+    const miss=[...new Set(sel.map(s=>s.responsible))].filter(r=>!contacts[r]);
+    if(miss.length){alert(`Add email for: ${miss.join(", ")} in Settings.`);return;}
+    setBatchBusy(true);let ok=0,fail=0;
+    for(const store of sel){
+      const mk=store.store+"email";
+      let msg=msgCache[mk];
+      if(!msg||msg==="loading"){msg=await apiMsg(store,"email");setMsgCache(p=>({...p,[mk]:msg}));}
+      const dueStr=store.due_date?new Date(store.due_date).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"soon";
+      const res=await sendEmail(contacts[store.responsible],`[Kushals] EB Reminder – ${store.store} (Due ${dueStr})`,msg);
+      setSent(p=>({...p,[store.store]:res.success?"sent":"failed"}));
+      if(res.success)ok++;else fail++;
+    }
+    setBatchBusy(false);setBatchRes({ok,fail});
+  }
+  function selAll(urg){
+    const stores=grouped[urg]||[];const allSel=stores.every(s=>selected[s.store]);
+    const u={...selected};stores.forEach(s=>{u[s.store]=!allSel;});setSelected(u);
+  }
+  function copyMsg(key,text){
+    navigator.clipboard.writeText(text).then(()=>{setCopied(p=>({...p,[key]:true}));setTimeout(()=>setCopied(p=>({...p,[key]:false})),2000);});
+  }
+
+  // tab label with badge
+  function TabLabel({i,label}){
+    const badge=i===6?needsReminder.length:i===1?alertCount:0;
+    return <button onClick={()=>setTab(i)} style={{padding:"7px 11px",fontSize:12,fontWeight:tab===i?500:400,background:"transparent",border:"none",cursor:"pointer",color:tab===i?"var(--color-text-primary)":"var(--color-text-secondary)",borderBottom:tab===i?"2px solid var(--color-text-primary)":"2px solid transparent",marginBottom:-1,whiteSpace:"nowrap",position:"relative"}}>
+      {label}
+      {badge>0&&<span style={{position:"absolute",top:4,right:2,background:i===6?"#E24B4A":"#D85A30",color:"#fff",fontSize:9,borderRadius:8,padding:"1px 4px",fontWeight:600,lineHeight:1.4}}>{badge}</span>}
+    </button>;
+  }
+
+  return (
+    <div style={{fontFamily:"var(--font-sans)",padding:"0.5rem 0",maxWidth:920}}>
+      {/* Header */}
+      <div style={{marginBottom:"1rem"}}>
+        <h1 style={{fontSize:19,fontWeight:500,margin:"0 0 3px"}}>Electricity Bill Control</h1>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{total} stores · May 2026 · {TODAY.toDateString()}</div>
+      </div>
+
+      {/* Metric strip */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:"1.25rem"}}>
+        <Card label="Total Stores" value={total}/>
+        <Card label="Invoice Uploaded" value={uploaded} sub={Math.round(uploaded/total*100)+"% compliance"} color="#185FA5"/>
+        <Card label="Payments Done" value={paid} sub={Math.round(paid/total*100)+"% of stores"} color="#3B6D11"/>
+        <Card label="Pending" value={pending} color="#854F0B"/>
+        <Card label="Overdue" value={overdue} color="#A32D2D"/>
+        <Card label="Total Amount" value={"₹"+(totalAmt/100000).toFixed(1)+"L"} sub="May 2026"/>
+      </div>
+
+      {/* Filters */}
+      <div style={{display:"flex",gap:8,marginBottom:"0.9rem",flexWrap:"wrap",alignItems:"center"}}>
+        <select value={stateF} onChange={e=>setStateF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
+          {states.map(s=><option key={s}>{s}</option>)}
+        </select>
+        <select value={respF} onChange={e=>setRespF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
+          {["All","CHETHAN","THARUN"].map(s=><option key={s}>{s}</option>)}
+        </select>
+        {(stateF!=="All"||respF!=="All")&&<button onClick={()=>{setStateF("All");setRespF("All");}} style={{fontSize:11,padding:"4px 8px"}}>✕ Clear</button>}
+        <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{filtered.length} stores</span>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,marginBottom:"1.25rem",borderBottom:"0.5px solid var(--color-border-tertiary)",overflowX:"auto"}}>
+        {TABS.map((t,i)=><TabLabel key={t} i={i} label={t}/>)}
+      </div>
+
+      {/* ── Tab 0: Overview ────────────────────────── */}
+      {tab===0&&<div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Monthly Upload & Payment Trend</div>
+            <ResponsiveContainer width="100%" height={170}>
+              <BarChart data={TREND} barSize={7}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <XAxis dataKey="month" tick={{fontSize:9}}/><YAxis tick={{fontSize:9}}/>
+                <Tooltip contentStyle={{fontSize:10}}/>
+                <Bar dataKey="uploaded" fill="#378ADD" name="Uploaded" radius={[2,2,0,0]}/>
+                <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[2,2,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>May 2026 Status</div>
+            <ResponsiveContainer width="100%" height={170}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={2}>
+                  {pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}
+                </Pie>
+                <Tooltip contentStyle={{fontSize:10}} formatter={v=>[v+" stores"]}/>
+                <Legend iconType="square" iconSize={8} wrapperStyle={{fontSize:10}}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>State-wise Summary</div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead><tr>{["State","Stores","Uploaded","Upload %","Paid","Amount"].map(h=><TH key={h} right={!["State"].includes(h)}>{h}</TH>)}</tr></thead>
+            <tbody>{byState.map(s=>(
+              <tr key={s.state} style={{cursor:"pointer"}} onClick={()=>{setStateF(s.state);setTab(2);}}>
+                <TD><span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:STATE_CLR[s.state]||"#888",marginRight:6}}/>{s.state}</TD>
+                <TD right>{s.total}</TD><TD right>{s.uploaded}</TD>
+                <TD right style={{color:s.uploaded/s.total>=0.8?"#3B6D11":"#854F0B"}}>{Math.round(s.uploaded/s.total*100)}%</TD>
+                <TD right>{s.paid}</TD><TD right>{fA(s.amount||null)}</TD>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>}
+
+      {/* ── Tab 1: Due Alerts ──────────────────────── */}
+      {tab===1&&<div>
+        {alertCount>0&&<div style={{background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
+          <span style={{color:"#A32D2D",fontWeight:500}}>⚠ {alertCount} stores</span><span style={{color:"#791F1F"}}> have payment due within 5 days and are still pending</span>
+        </div>}
+        <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead><tr>{["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>{filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map((s,i)=>{
+              const d=days(s.due_date),isAlert=d!==null&&d>=0&&d<=5&&s.pay_status==="Pending",isOD=d!==null&&d<0&&s.pay_status==="Pending";
+              return <tr key={i} style={{background:isAlert?"#FFF8F0":isOD?"#FFF0F0":"transparent"}}>
+                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                <TD style={{fontWeight:isAlert||isOD?500:400}}>{s.store}</TD>
+                <TD style={{fontSize:11}}>{s.responsible}</TD>
+                <TD style={{whiteSpace:"nowrap"}}>{new Date(s.due_date).toLocaleDateString("en-IN")}</TD>
+                <TD style={{fontWeight:500,color:d<0?"#A32D2D":d<=3?"#D85A30":d<=5?"#BA7517":"#3B6D11"}}>
+                  {d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`}
+                </TD>
+                <TD><Tag t={s.has_invoice?"upload":"miss"} v={s.has_invoice?"✓ Uploaded":"Missing"}/></TD>
+                <TD><Tag t={s.pay_status==="Paid"?"paid":isOD?"overdue":"pending"} v={s.pay_status}/></TD>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>
+        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>No Due Date Entered</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {filtered.filter(s=>!s.due_date).map((s,i)=><span key={i} style={{background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:"var(--border-radius-md)",padding:"3px 10px",fontSize:11,color:"var(--color-text-secondary)"}}>{s.store} <span style={{color:"var(--color-text-tertiary)"}}>({s.state})</span></span>)}
+        </div>
+      </div>}
+
+      {/* ── Tab 2: Tracker ─────────────────────────── */}
+      {tab===2&&<div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr>{["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment","Notes"].map(h=><TH key={h} right={["Units","Amount"].includes(h)}>{h}</TH>)}</tr></thead>
+          <tbody>{filtered.map((s,i)=>(
+            <tr key={i}>
+              <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+              <TD style={{fontWeight:500,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
+              <TD style={{fontSize:11}}>{s.responsible}</TD>
+              <TD style={{whiteSpace:"nowrap",fontSize:11}}>{s.due_date?new Date(s.due_date).toLocaleDateString("en-IN"):"—"}</TD>
+              <TD right>{fN(s.units)}</TD>
+              <TD right>{fA(s.amount)}</TD>
+              <TD><Tag t={s.has_invoice?"upload":"miss"} v={s.has_invoice?"✓ Uploaded":"Missing"}/></TD>
+              <TD><Tag t={s.pay_status==="Paid"?"paid":"pending"} v={s.pay_status}/></TD>
+              <TD style={{fontSize:10,color:"var(--color-text-tertiary)"}}>
+                {s.units&&!s.amount?"⚠ Amt missing":!s.units&&s.has_invoice?"⚠ Units missing":""}
+              </TD>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>}
+
+      {/* ── Tab 3: Payments ────────────────────────── */}
+      {tab===3&&<div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Paid vs Pending by State</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={byState.slice(0,8)} layout="vertical" barSize={9}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
+                <XAxis type="number" tick={{fontSize:9}}/><YAxis type="category" dataKey="state" tick={{fontSize:9}} width={78}/>
+                <Tooltip contentStyle={{fontSize:10}}/>
+                <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[0,2,2,0]}/>
+                <Bar dataKey="total" fill="#E24B4A" name="Total" radius={[0,2,2,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Pending Payments</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:210,overflowY:"auto"}}>
+              {filtered.filter(s=>s.pay_status==="Pending").map((s,i)=>{
+                const d=days(s.due_date);
+                return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:d!==null&&d<0?"#FFF0F0":"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",fontSize:12}}>
+                  <div><div style={{fontWeight:500}}>{s.store}</div><div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{s.state} · {s.responsible}</div></div>
+                  <div style={{textAlign:"right"}}>
+                    {s.amount&&<div style={{fontWeight:500,color:"#854F0B"}}>{fA(s.amount)}</div>}
+                    {d!==null&&<div style={{fontSize:10,color:d<0?"#A32D2D":"#854F0B"}}>{d<0?`${Math.abs(d)}d overdue`:`Due in ${d}d`}</div>}
+                  </div>
+                </div>;
+              })}
+            </div>
+          </div>
+        </div>
+      </div>}
+
+      {/* ── Tab 4: MoM ─────────────────────────────── */}
+      {tab===4&&<div>
+        <div style={{marginBottom:"1.5rem"}}>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Total Monthly Bill Trend</div>
+          <ResponsiveContainer width="100%" height={150}>
+            <LineChart data={TREND}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+              <XAxis dataKey="month" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}} tickFormatter={v=>"₹"+(v/100000).toFixed(1)+"L"}/>
+              <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+(v/100000).toFixed(2)+"L"]}/>
+              <Line type="monotone" dataKey="amount" stroke="#1D9E75" strokeWidth={2} dot={{r:3}} name="Total Amount"/>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>May vs April — Store-wise</div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead><tr>{["Store","State","Apr Units","May Units","Change","% Chg","Apr Amt","May Amt"].map(h=><TH key={h} right={!["Store","State"].includes(h)}>{h}</TH>)}</tr></thead>
+            <tbody>{momData.map((s,i)=>(
+              <tr key={i}>
+                <TD style={{fontWeight:500,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
+                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                <TD right>{fN(s.apr)}</TD><TD right style={{fontWeight:500}}>{fN(s.may)}</TD>
+                <TD right style={{color:s.chg>0?"#A32D2D":"#3B6D11"}}>{s.chg>0?"+":""}{fN(s.chg)}</TD>
+                <TD right><span style={{background:s.pct>10?"#FCEBEB":s.pct<-10?"#EAF3DE":"var(--color-background-secondary)",color:s.pct>10?"#A32D2D":s.pct<-10?"#3B6D11":"var(--color-text-secondary)",padding:"1px 6px",borderRadius:8,fontSize:11}}>{s.pct>0?"+":""}{s.pct}%</span></TD>
+                <TD right style={{fontSize:11}}>{fA(s.aprA||null)}</TD>
+                <TD right style={{fontSize:11}}>{fA(s.mayA||null)}</TD>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>}
+
+      {/* ── Tab 5: High Bills ──────────────────────── */}
+      {tab===5&&<div>
+        <div style={{background:"#FAEEDA",border:"0.5px solid #FAC775",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
+          Avg rate: <strong>₹{avgPU}/unit</strong> · Stores above ₹{Math.round(highThr)}/unit flagged as high-cost
+        </div>
+        <div style={{marginBottom:"1.5rem"}}>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Per-Unit Rate (₹/kWh) — Top 15</div>
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={perUnit.slice(0,15)} layout="vertical" barSize={9}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
+              <XAxis type="number" tick={{fontSize:9}} tickFormatter={v=>"₹"+v}/>
+              <YAxis type="category" dataKey="store" tick={{fontSize:8}} width={130}/>
+              <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+v+"/unit"]}/>
+              <Bar dataKey="pu" radius={[0,2,2,0]} name="Rate">
+                {perUnit.slice(0,15).map((d,i)=><Cell key={i} fill={d.pu>highThr?"#E24B4A":d.pu>avgPU?"#EF9F27":"#1D9E75"}/>)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>High-Rate Stores (Above ₹{Math.round(highThr)}/unit)</div>
+        <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead><tr>{["State","Store","Units","Amount","₹/Unit","vs Avg","Action"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>{perUnit.filter(s=>s.pu>highThr).map((s,i)=>(
+              <tr key={i} style={{background:"#FFF8F5"}}>
+                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                <TD style={{fontWeight:500}}>{s.store}</TD>
+                <TD>{fN(s.units)}</TD><TD>{fA(s.amount)}</TD>
+                <TD style={{fontWeight:500,color:"#A32D2D"}}>₹{s.pu}</TD>
+                <TD style={{color:"#A32D2D"}}>+{Math.round((s.pu-avgPU)/avgPU*100)}%</TD>
+                <TD style={{fontSize:11,color:"var(--color-text-tertiary)"}}>Review tariff / meter</TD>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Top 5 Highest Bills</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {[...STORES].filter(s=>s.amount).sort((a,b)=>b.amount-a.amount).slice(0,5).map((s,i)=>(
+            <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"10px 14px",minWidth:130,flex:"1 1 130px"}}>
+              <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginBottom:3}}>{s.state}</div>
+              <div style={{fontSize:12,fontWeight:500,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</div>
+              <div style={{fontSize:18,fontWeight:500,color:i===0?"#A32D2D":"var(--color-text-primary)"}}>{fA(s.amount)}</div>
+              <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{fN(s.units)} kWh</div>
+            </div>
+          ))}
+        </div>
+      </div>}
+
+      {/* ── Tab 6: Reminders ───────────────────────── */}
+      {tab===6&&<div>
+
+        {/* Settings panel (collapsible) */}
+        <div style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",marginBottom:"1rem",overflow:"hidden"}}>
+          <button onClick={()=>setSettingsOpen(p=>!p)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontSize:13,fontWeight:500}}>
+            <span>⚙ Contact Settings</span>
+            <span style={{fontSize:11,color:"var(--color-text-secondary)"}}>{settingsOpen?"▲ Hide":"▼ Configure emails & WhatsApp"}</span>
+          </button>
+          {settingsOpen&&<div style={{padding:"0 14px 14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            {["CHETHAN","THARUN"].map(name=>(
+              <div key={name} style={{background:"var(--color-background-primary)",borderRadius:"var(--border-radius-sm)",padding:"10px 12px"}}>
+                <div style={{fontWeight:500,fontSize:13,marginBottom:8}}>{name}</div>
+                <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>Email</label>
+                <input type="email" placeholder={`${name.toLowerCase()}@kushals.com`} value={contacts[name]} onChange={e=>setContacts(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",marginBottom:8}}/>
+                <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>WhatsApp (with country code)</label>
+                <input type="tel" placeholder="+91 98765 43210" value={waNum[name]} onChange={e=>setWaNum(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)"}}/>
+              </div>
+            ))}
+          </div>}
+        </div>
+
+        {/* Urgency pills */}
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:"1rem"}}>
+          {Object.entries(URGENCY).map(([k,cfg])=>{const c=(grouped[k]||[]).length;if(!c)return null;
+            return <div key={k} style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:20,padding:"3px 10px",fontSize:12,color:cfg.color,fontWeight:500}}>{cfg.icon} {c} {cfg.label}</div>;
+          })}
+          {needsReminder.length===0&&<div style={{fontSize:13,color:"var(--color-text-tertiary)"}}>🎉 All stores up to date — no reminders needed!</div>}
+        </div>
+
+        {/* Toolbar */}
+        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:"1rem",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:2,background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:3}}>
+            {[["whatsapp","💬 WhatsApp"],["email","✉ Email"]].map(([t,l])=>(
+              <button key={t} onClick={()=>setMsgType(t)} style={{padding:"5px 11px",fontSize:12,fontWeight:msgType===t?500:400,background:msgType===t?"var(--color-background-primary)":"transparent",border:msgType===t?"0.5px solid var(--color-border-secondary)":"none",borderRadius:"var(--border-radius-sm)",cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+          {selCount>0&&<>
+            <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>{selCount} selected</span>
+            <button onClick={batchSend} disabled={batchBusy} style={{padding:"6px 14px",fontSize:12,fontWeight:500,background:"#185FA5",color:"#fff",border:"none",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>
+              {batchBusy?"Sending…":`✉ Send ${selCount} Email${selCount>1?"s":""}`}
+            </button>
+            <button onClick={()=>setSelected({})} style={{fontSize:12,padding:"6px 10px",background:"transparent",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>Clear</button>
+          </>}
+        </div>
+
+        {batchRes&&<div style={{background:batchRes.fail===0?"#EAF3DE":"#FAEEDA",border:`0.5px solid ${batchRes.fail===0?"#8AC44A":"#FAC775"}`,borderRadius:"var(--border-radius-md)",padding:"8px 14px",fontSize:12,marginBottom:"1rem",color:batchRes.fail===0?"#3B6D11":"#854F0B"}}>
+          {batchRes.fail===0?`✓ All ${batchRes.ok} emails sent`:`${batchRes.ok} sent · ${batchRes.fail} failed — check Settings`}
+        </div>}
+
+        {/* Reminder groups */}
+        {Object.entries(URGENCY).map(([urgency,cfg])=>{
+          const stores=grouped[urgency];if(!stores?.length)return null;
+          return <div key={urgency} style={{marginBottom:"1.5rem"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span>{cfg.icon}</span>
+                <span style={{fontWeight:500,fontSize:13,color:cfg.color}}>{cfg.label}</span>
+                <span style={{background:cfg.bg,color:cfg.color,fontSize:11,padding:"1px 7px",borderRadius:10,fontWeight:500}}>{stores.length}</span>
+              </div>
+              <button onClick={()=>selAll(urgency)} style={{fontSize:11,color:"var(--color-text-secondary)",background:"transparent",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                {stores.every(s=>selected[s.store])?"Deselect all":"Select all"}
+              </button>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {stores.map(store=>{
+                const mk=store.store+msgType,msg=msgCache[mk],isExp=expanded===store.store,
+                      isSending=sending[store.store],sentSt=sent[store.store];
+                return <div key={store.store} style={{background:"var(--color-background-secondary)",border:`0.5px solid ${isExp?cfg.border:"var(--color-border-tertiary)"}`,borderRadius:"var(--border-radius-md)",overflow:"hidden"}}>
+                  {/* Row */}
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",flexWrap:"wrap"}}>
+                    <input type="checkbox" checked={!!selected[store.store]} onChange={e=>setSelected(p=>({...p,[store.store]:e.target.checked}))} style={{cursor:"pointer",flexShrink:0}}/>
+                    <div style={{flex:1,minWidth:130}}>
+                      <div style={{fontWeight:500,fontSize:13}}>{store.store}</div>
+                      <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:1}}>
+                        {store.state} · {store.responsible}
+                        {store.due_date&&<span style={{marginLeft:8,color:cfg.color,fontWeight:500}}>
+                          {store.d<0?`${Math.abs(store.d)}d overdue`:store.d===0?"Due today":`${store.d}d left`}
+                        </span>}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:5,fontSize:11,flexShrink:0,flexWrap:"wrap"}}>
+                      {!store.has_invoice&&<span style={{background:"#F1EFE8",color:"#5F5E5A",padding:"2px 6px",borderRadius:8}}>No invoice</span>}
+                      {store.has_invoice&&!store.amount&&<span style={{background:"#FAEEDA",color:"#854F0B",padding:"2px 6px",borderRadius:8}}>Amt missing</span>}
+                      {store.amount&&<span style={{background:"var(--color-background-primary)",color:"var(--color-text-secondary)",padding:"2px 6px",borderRadius:8}}>₹{store.amount.toLocaleString("en-IN")}</span>}
+                    </div>
+                    <div style={{display:"flex",gap:5,flexShrink:0}}>
+                      <button onClick={()=>toggleExpand(store)} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-primary)",cursor:"pointer"}}>
+                        {isExp?"▲ Hide":"💬 Preview"}
+                      </button>
+                      {msgType==="whatsapp"&&waNum[store.responsible]&&msg&&msg!=="loading"&&(
+                        <a href={`https://wa.me/${waNum[store.responsible].replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"
+                          style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:"#25D366",color:"#fff",textDecoration:"none"}}>WA ↗</a>
+                      )}
+                      {msgType==="email"&&(
+                        <button onClick={()=>handleSend(store)} disabled={isSending||sentSt==="sent"} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:sentSt==="sent"?"#EAF3DE":sentSt==="failed"?"#FCEBEB":"#185FA5",color:sentSt?"(sentSt==='sent'?'#3B6D11':'#A32D2D')":"#fff",border:"none",cursor:"pointer"}}>
+                          {isSending?"…":sentSt==="sent"?"✓":sentSt==="failed"?"✗":"✉"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Message panel */}
+                  {isExp&&<div style={{borderTop:"0.5px solid var(--color-border-tertiary)",padding:"10px 12px",background:"var(--color-background-primary)"}}>
+                    {!msg||msg==="loading"?(
+                      <div style={{fontSize:12,color:"var(--color-text-tertiary)",display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--color-border-secondary)",borderTopColor:"var(--color-text-primary)",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+                        Generating {msgType} message…
+                      </div>
+                    ):(
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                          <span style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>{msgType==="whatsapp"?"WhatsApp Message":"Email Body"}</span>
+                          <div style={{display:"flex",gap:5}}>
+                            <button onClick={()=>copyMsg(mk,msg)} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>
+                              {copied[mk]?"✓ Copied":"Copy"}
+                            </button>
+                            <button onClick={async()=>{setMsgCache(p=>({...p,[mk]:"loading"}));const m=await apiMsg(store,msgType);setMsgCache(p=>({...p,[mk]:m}));}} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>↻</button>
+                          </div>
+                        </div>
+                        <div style={{fontSize:13,lineHeight:1.65,whiteSpace:"pre-wrap",background:"var(--color-background-secondary)",padding:"9px 11px",borderRadius:"var(--border-radius-sm)"}}>{msg}</div>
+                        {msgType==="whatsapp"&&!waNum[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s WhatsApp in Settings for a direct send link.</div>}
+                        {msgType==="email"&&!contacts[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s email in Settings to send directly.</div>}
+                      </div>
+                    )}
+                  </div>}
+                </div>;
+              })}
+            </div>
+          </div>;
+        })}
+      </div>}
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+    </div>
+  );
+}
