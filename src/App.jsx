@@ -1,74 +1,98 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
 
-const TODAY = new Date("2026-05-22");
+const SHEET_ID  = "18giFVrZifBJzzsoX1LfuCnXXqm41dNgrogPehvJkFSA";
+const SHEET_GID = "2131982147";
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?gid=${SHEET_GID}&single=true&output=csv`;
 
-const STORES = [
-  { state:"Andhra Pradesh", store:"VJW - GAYATHRI NAGAR",        responsible:"THARUN",  due_date:"2026-05-20", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"VIG - SIRIPURAM",              responsible:"CHETHAN", due_date:"2026-05-16", units:null,  amount:56392,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"RJM - DANVAIPETA",             responsible:"CHETHAN", due_date:"2026-05-18", units:6371,  amount:61393,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"GTR - LAXMIPURAM",             responsible:"CHETHAN", due_date:"2026-05-20", units:4449,  amount:40688,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"TRP - AIR ROAD",               responsible:"CHETHAN", due_date:"2026-05-16", units:5060,  amount:56120,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"VJN - SRINIVASA NAGAR",        responsible:"CHETHAN", due_date:"2026-05-17", units:5444,  amount:52245,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"KKN - RAMA KRISHNARAO PET",    responsible:"CHETHAN", due_date:"2026-05-20", units:5991,  amount:57583,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"NLR - MINI BYPASS ROAD",       responsible:"CHETHAN", due_date:"2026-05-18", units:4855,  amount:46365,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"ONG - M M ROAD",               responsible:"CHETHAN", due_date:"2026-05-19", units:1776,  amount:37010,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"VJW - M G ROAD",               responsible:"CHETHAN", due_date:"2026-05-18", units:6506,  amount:67154,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"VIG - MADHURWADA",             responsible:"CHETHAN", due_date:"2026-05-15", units:6284,  amount:66284,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"BIM-JP ROAD",                  responsible:"CHETHAN", due_date:"2026-05-30", units:6280,  amount:64493,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"Ananthpur",                    responsible:"CHETHAN", due_date:"2026-05-16", units:4487,  amount:46269,  has_invoice:false, pay_status:"Paid" },
-  { state:"Andhra Pradesh", store:"KRL - BHAGYA NAGAR",           responsible:"CHETHAN", due_date:"2026-04-16", units:8286,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Assam",          store:"GWT - G S ROAD",               responsible:"CHETHAN", due_date:"2026-05-25", units:4177,  amount:50000,  has_invoice:false, pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - MALLESWARAM",            responsible:"CHETHAN", due_date:"2026-05-15", units:3950,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - JAYNAGAR 4th block",     responsible:"CHETHAN", due_date:"2026-05-26", units:5277,  amount:47976,  has_invoice:false, pay_status:"Pending" },
-  { state:"Karnataka",      store:"MYS - DEVRAJ URS ROAD",        responsible:"CHETHAN", due_date:"2026-05-15", units:4950,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Karnataka",      store:"BLR - BASAWESHWAR NAGAR",      responsible:"CHETHAN", due_date:"2026-05-15", units:3805,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - INDIRANAGAR",            responsible:"CHETHAN", due_date:"2026-05-15", units:4740,  amount:46662,  has_invoice:false, pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - SAHAKARNAGAR",           responsible:"CHETHAN", due_date:"2026-05-10", units:4709,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - HENNUR ROAD",            responsible:"CHETHAN", due_date:"2026-05-15", units:4920,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - ARS COMPLEX MALLESHWARAM",responsible:"CHETHAN",due_date:"2026-05-08", units:2711,  amount:27609,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"UDP - MAIN MARKET",            responsible:"CHETHAN", due_date:"2026-05-15", units:4827,  amount:47511,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"MGL - BALMATTA",               responsible:"CHETHAN", due_date:"2026-05-16", units:1974,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Karnataka",      store:"MGL-NEXUS FIZA MALL",          responsible:"THARUN",  due_date:"2026-05-14", units:1679,  amount:21171,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - HSR LAYOUT",             responsible:"CHETHAN", due_date:"2026-05-17", units:4681,  amount:45377,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"Belgaum Thilakwadi",           responsible:"CHETHAN", due_date:"2026-05-22", units:7460,  amount:65694,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - DVG ROAD",               responsible:"CHETHAN", due_date:null,         units:4213,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - RR NAGAR",               responsible:"CHETHAN", due_date:null,         units:3680,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"BLR - KAMMANAHALLI",           responsible:"THARUN",  due_date:"2026-05-15", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Karnataka",      store:"HBL - KOPPIKAR ROAD",          responsible:"THARUN",  due_date:"2026-05-13", units:null,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Kerala",         store:"KCH - LULU MALL",              responsible:"CHETHAN", due_date:"2026-05-11", units:2562,  amount:28864,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Kerala",         store:"KCH - MG ROAD",                responsible:"CHETHAN", due_date:"2026-05-12", units:3480,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Madhya Pradesh", store:"IDR - SNEH NAGAR",             responsible:"CHETHAN", due_date:"2026-05-18", units:3505,  amount:32448,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Maharashtra",    store:"PUN - PHOENIX MALL VIMAN NAGAR",responsible:"CHETHAN",due_date:"2026-05-29", units:2374,  amount:67730,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Maharashtra",    store:"PUNMLM - MALL OF THE MILLENNIUM",responsible:"CHETHAN",due_date:"2026-05-24",units:3049,  amount:40810,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Maharashtra",    store:"PUN - KOREGAON PARK",          responsible:"CHETHAN", due_date:"2026-05-25", units:4601,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Maharashtra",    store:"PUN - WESTEND MALL",           responsible:"CHETHAN", due_date:"2026-05-26", units:2012,  amount:27380,  has_invoice:false, pay_status:"Paid" },
-  { state:"Maharashtra",    store:"PUN - SOLITAIRE BUSINESS HUB", responsible:"CHETHAN", due_date:"2026-05-26", units:12876, amount:493950, has_invoice:true,  pay_status:"Paid" },
-  { state:"Maharashtra",    store:"MUM - PHOENIX MARKET CITY",    responsible:"CHETHAN", due_date:"2026-05-27", units:1213,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Tamil Nadu",     store:"CBT - RS PURAM",               responsible:"CHETHAN", due_date:"2026-05-18", units:9769,  amount:120791, has_invoice:true,  pay_status:"Paid" },
-  { state:"Tamil Nadu",     store:"CHN-PAPERMILL ROAD",           responsible:"CHETHAN", due_date:"2026-05-26", units:8374,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Tamil Nadu",     store:"Tirchi Bypass Road",           responsible:"CHETHAN", due_date:"2026-06-01", units:4941,  amount:66359,  has_invoice:false, pay_status:"Paid" },
-  { state:"Tamil Nadu",     store:"CHN - T NAGAR",                responsible:"CHETHAN", due_date:"2026-04-15", units:6800,  amount:84725,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Tamil Nadu",     store:"SLM - SARADA COLLEGE ROAD",    responsible:"CHETHAN", due_date:"2026-04-13", units:9761,  amount:117057, has_invoice:true,  pay_status:"Paid" },
-  { state:"Tamil Nadu",     store:"CHN - ADYAR",                  responsible:"CHETHAN", due_date:"2026-04-27", units:6750,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Delhi",          store:"KAMALANAGAR",                  responsible:"CHETHAN", due_date:"2026-05-16", units:3457,  amount:49230,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"HYD - DSL VIRTUE MALL",        responsible:"THARUN",  due_date:"2026-05-12", units:2333,  amount:34549,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"HYD - JUBILEE HILLS",          responsible:"CHETHAN", due_date:"2026-05-16", units:7153,  amount:77883,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"HYD - ATTAPUR",                responsible:"CHETHAN", due_date:"2026-05-21", units:4489,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Telangana",      store:"HYD - KOTHAPET",               responsible:"CHETHAN", due_date:"2026-05-04", units:4370,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Telangana",      store:"HYD - AS RAO NAGAR",           responsible:"CHETHAN", due_date:"2026-05-17", units:5211,  amount:null,   has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"HYD - VANATSALIPURAM",         responsible:"CHETHAN", due_date:"2026-05-21", units:4489,  amount:46469,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"KRM - AMBEDKAR ROAD",          responsible:"CHETHAN", due_date:"2026-05-15", units:3923,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Telangana",      store:"WRL - NAIM NAGAR",             responsible:"CHETHAN", due_date:"2026-05-20", units:7043,  amount:79973,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"KHM - WYRA ROAD",              responsible:"CHETHAN", due_date:"2026-05-29", units:7109,  amount:179834, has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"NALAGANDLA",                   responsible:"CHETHAN", due_date:"2026-05-19", units:3718,  amount:34246,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"Kokapet",                      responsible:"CHETHAN", due_date:"2026-05-16", units:4172,  amount:47160,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"KONDAPUR",                     responsible:"CHETHAN", due_date:"2026-05-14", units:2737,  amount:34280,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"HYD-PKL",                      responsible:"CHETHAN", due_date:"2026-05-19", units:4649,  amount:47637,  has_invoice:true,  pay_status:"Paid" },
-  { state:"Telangana",      store:"NZM - PRAGATHI NAGAR",         responsible:"CHETHAN", due_date:null,         units:6098,  amount:69977,  has_invoice:false, pay_status:"Paid" },
-  { state:"Telangana",      store:"Kukatpally",                   responsible:"CHETHAN", due_date:"2026-04-16", units:5457,  amount:null,   has_invoice:true,  pay_status:"Pending" },
-  { state:"Puducherry",     store:"PDC - MISSION STREET",         responsible:"CHETHAN", due_date:"2026-05-21", units:3630,  amount:49803,  has_invoice:true,  pay_status:"Pending" },
-];
+const TODAY = new Date();
+
+// ── CSV / sheet parsing ───────────────────────────────────────────────────────
+
+function parseCSV(text) {
+  const rows = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    const row = [];
+    let inQ = false, cell = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { if (inQ && line[i+1] === '"') { cell += '"'; i++; } else inQ = !inQ; }
+      else if (c === "," && !inQ) { row.push(cell.trim()); cell = ""; }
+      else cell += c;
+    }
+    row.push(cell.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+const STATE_NORM = {
+  "andhra pradesh":"Andhra Pradesh","assam":"Assam","chandigarh":"Chandigarh",
+  "gujarat":"Gujarat","karnataka":"Karnataka","kerala":"Kerala",
+  "madhya pradesh":"Madhya Pradesh","maharashtra":"Maharashtra","tamil nadu":"Tamil Nadu",
+  "telangana":"Telangana","delhi":"Delhi","uttar pradesh":"Uttar Pradesh","puducherry":"Puducherry",
+};
+function normState(s){ return STATE_NORM[s?.trim().toLowerCase()] ?? s?.trim() ?? ""; }
+
+function parseDate(s) {
+  if (!s) return null;
+  s = s.trim();
+  const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m1) return `${m1[3]}-${m1[2].padStart(2,"0")}-${m1[1].padStart(2,"0")}`;
+  const MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  const m2 = s.match(/^(\d{1,2})[\/\-\s]([A-Za-z]+)[\/\-\s](\d{4})$/);
+  if (m2) { const mo = MONTHS[m2[2].toLowerCase().slice(0,3)]; if (mo) return `${m2[3]}-${String(mo).padStart(2,"0")}-${m2[1].padStart(2,"0")}`; }
+  return null;
+}
+
+function parseAmount(s) {
+  if (!s) return null;
+  s = s.trim();
+  const parts = s.match(/\d\)\s*([\d,]+)/g);
+  if (parts) return parts.reduce((sum,p)=>{ const n=p.match(/([\d,]+)/); return sum+parseInt(n[1].replace(/,/g,""),10); },0);
+  const n = parseInt(s.replace(/,/g,"").replace(/[^\d]/g,""), 10);
+  return isNaN(n)||n===0 ? null : n;
+}
+
+function parseUnits(s) {
+  if (!s) return null;
+  const n = parseInt(s.replace(/,/g,""), 10);
+  return isNaN(n)||n===0 ? null : n;
+}
+
+function payStatus(remarks) {
+  if (!remarks) return "Pending";
+  const r = remarks.trim().toLowerCase();
+  if (r === "p" || r === "pd") return "Paid";
+  if (r.includes("done")) return "Paid";
+  if (r.includes("ecs")) return "Paid";
+  if (r.includes("epi")) return "Paid";
+  return "Pending";
+}
+
+function mapRow(row) {
+  const [stateRaw, storeRaw, respRaw, dueDateRaw, unitsRaw, invoiceLinkRaw, amountRaw, remarksRaw] = row;
+  const state = normState(stateRaw);
+  const store = storeRaw?.replace(/\t/g,"").trim() ?? "";
+  if (!state || !store) return null;
+  const invoiceLink = invoiceLinkRaw?.trim() ?? "";
+  const has_invoice = invoiceLink.startsWith("http");
+  return {
+    state,
+    store,
+    responsible: respRaw?.trim() ?? "",
+    due_date: parseDate(dueDateRaw),
+    units: parseUnits(unitsRaw),
+    amount: parseAmount(amountRaw),
+    has_invoice,
+    invoice_link: has_invoice ? invoiceLink : null,
+    pay_status: payStatus(remarksRaw),
+    remarks: remarksRaw?.trim() ?? "",
+  };
+}
+
+// ── Static historical data ────────────────────────────────────────────────────
 
 const APR = {
   "RJM - DANVAIPETA":{units:7493,amount:82554},"GTR - LAXMIPURAM":{units:5353,amount:58746},
@@ -100,7 +124,12 @@ const TREND = [
   {month:"May-26",uploaded:58,paid:51,units:178000,amount:2380000},
 ];
 
-const STATE_CLR = {"Andhra Pradesh":"#378ADD","Karnataka":"#1D9E75","Kerala":"#D4537E","Tamil Nadu":"#BA7517","Telangana":"#7F77DD","Maharashtra":"#D85A30","Madhya Pradesh":"#639922","Delhi":"#888780","Assam":"#63340A","Puducherry":"#993556"};
+const STATE_CLR = {
+  "Andhra Pradesh":"#378ADD","Karnataka":"#1D9E75","Kerala":"#D4537E","Tamil Nadu":"#BA7517",
+  "Telangana":"#7F77DD","Maharashtra":"#D85A30","Madhya Pradesh":"#639922","Delhi":"#888780",
+  "Assam":"#63340A","Puducherry":"#993556","Gujarat":"#E89B20","Chandigarh":"#4AABDB",
+  "Uttar Pradesh":"#A060C8",
+};
 
 const URGENCY = {
   overdue: {label:"Overdue",        color:"#A32D2D",bg:"#FCEBEB",border:"#F09595",icon:"🔴",p:0},
@@ -112,7 +141,7 @@ const URGENCY = {
 
 const TABS = ["Overview","Due Alerts","Tracker","Payments","MoM","High Bills","🔔 Reminders"];
 
-// ── helpers ──────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 function days(due){if(!due)return null;return Math.ceil((new Date(due)-TODAY)/86400000);}
 function urgencyOf(s){const d=days(s.due_date);if(s.pay_status==="Paid")return null;if(d===null)return null;if(d<0)return"overdue";if(d===0)return"today";if(d<=2)return"critical";if(d<=5)return"warning";if(d<=10)return"upcoming";return null;}
 function fA(n){return n==null?"—":"₹"+n.toLocaleString("en-IN");}
@@ -162,13 +191,17 @@ async function sendEmail(to,subject,body){
   return{success:!!(tool||(txt?.text?.toLowerCase().includes("sent")))};
 }
 
-// ── Main ─────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function App(){
+  const [stores,setStores]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [syncErr,setSyncErr]=useState(null);
+  const [lastSync,setLastSync]=useState(null);
+
   const [tab,setTab]=useState(0);
   const [stateF,setStateF]=useState("All");
   const [respF,setRespF]=useState("All");
 
-  // Reminder state
   const [contacts,setContacts]=useState({CHETHAN:"",THARUN:""});
   const [waNum,setWaNum]=useState({CHETHAN:"",THARUN:""});
   const [msgType,setMsgType]=useState("whatsapp");
@@ -182,43 +215,62 @@ export default function App(){
   const [batchRes,setBatchRes]=useState(null);
   const [settingsOpen,setSettingsOpen]=useState(false);
 
-  const states=useMemo(()=>["All",...new Set(STORES.map(s=>s.state))].sort(),[]);
-  const filtered=useMemo(()=>STORES.filter(s=>(stateF==="All"||s.state===stateF)&&(respF==="All"||s.responsible===respF)),[stateF,respF]);
+  const loadSheet = useCallback(async () => {
+    setLoading(true); setSyncErr(null);
+    try {
+      const res = await fetch(SHEET_CSV_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status} — sheet may not be published yet`);
+      const text = await res.text();
+      const rows = parseCSV(text);
+      const data = rows.slice(1).map(mapRow).filter(Boolean).filter(s=>s.store);
+      setStores(data);
+      setLastSync(new Date());
+    } catch(e) {
+      setSyncErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // metrics
-  const total=STORES.length, uploaded=STORES.filter(s=>s.has_invoice).length,
-        paid=STORES.filter(s=>s.pay_status==="Paid").length, pending=STORES.filter(s=>s.pay_status==="Pending").length,
-        overdue=STORES.filter(s=>{const d=days(s.due_date);return d!==null&&d<0&&s.pay_status==="Pending";}).length,
-        totalAmt=STORES.filter(s=>s.amount).reduce((a,s)=>a+s.amount,0);
-  const alertCount=STORES.filter(s=>{const d=days(s.due_date);return d!==null&&d>=0&&d<=5&&s.pay_status==="Pending";}).length;
+  useEffect(() => { loadSheet(); }, [loadSheet]);
+
+  const states=useMemo(()=>["All",...new Set(stores.map(s=>s.state))].sort(),[stores]);
+  const filtered=useMemo(()=>stores.filter(s=>(stateF==="All"||s.state===stateF)&&(respF==="All"||s.responsible===respF)),[stateF,respF,stores]);
+
+  const total=stores.length,
+        uploaded=stores.filter(s=>s.has_invoice).length,
+        paid=stores.filter(s=>s.pay_status==="Paid").length,
+        pending=stores.filter(s=>s.pay_status==="Pending").length,
+        overdue=stores.filter(s=>{const d=days(s.due_date);return d!==null&&d<0&&s.pay_status==="Pending";}).length,
+        totalAmt=stores.filter(s=>s.amount).reduce((a,s)=>a+s.amount,0);
+  const alertCount=stores.filter(s=>{const d=days(s.due_date);return d!==null&&d>=0&&d<=5&&s.pay_status==="Pending";}).length;
 
   const byState=useMemo(()=>{
     const m={};
-    STORES.forEach(s=>{if(!m[s.state])m[s.state]={state:s.state,total:0,uploaded:0,paid:0,units:0,amount:0};
+    stores.forEach(s=>{if(!m[s.state])m[s.state]={state:s.state,total:0,uploaded:0,paid:0,units:0,amount:0};
       m[s.state].total++;if(s.has_invoice)m[s.state].uploaded++;if(s.pay_status==="Paid")m[s.state].paid++;
       if(s.units)m[s.state].units+=s.units;if(s.amount)m[s.state].amount+=s.amount;});
     return Object.values(m).sort((a,b)=>b.amount-a.amount);
-  },[]);
+  },[stores]);
 
-  const momData=useMemo(()=>STORES.filter(s=>s.units&&APR[s.store]).map(s=>({
+  const momData=useMemo(()=>stores.filter(s=>s.units&&APR[s.store]).map(s=>({
     store:s.store.length>20?s.store.slice(0,18)+"…":s.store,full:s.store,state:s.state,
     may:s.units,apr:APR[s.store].units,mayA:s.amount||0,aprA:APR[s.store].amount||0,
     chg:s.units-APR[s.store].units,pct:Math.round(((s.units-APR[s.store].units)/APR[s.store].units)*100),
-  })).sort((a,b)=>b.pct-a.pct),[]);
+  })).sort((a,b)=>b.pct-a.pct),[stores]);
 
-  const perUnit=useMemo(()=>STORES.filter(s=>s.units>100&&s.amount).map(s=>({...s,pu:Math.round(s.amount/s.units)})).sort((a,b)=>b.pu-a.pu),[]);
+  const perUnit=useMemo(()=>stores.filter(s=>s.units>100&&s.amount).map(s=>({...s,pu:Math.round(s.amount/s.units)})).sort((a,b)=>b.pu-a.pu),[stores]);
   const avgPU=perUnit.length?Math.round(perUnit.reduce((a,s)=>a+s.pu,0)/perUnit.length):0;
   const highThr=avgPU*1.3;
 
   const pieData=[
-    {name:"Uploaded & Paid",value:STORES.filter(s=>s.has_invoice&&s.pay_status==="Paid").length,color:"#1D9E75"},
-    {name:"Uploaded, Pending",value:STORES.filter(s=>s.has_invoice&&s.pay_status==="Pending").length,color:"#BA7517"},
-    {name:"No Invoice, Paid",value:STORES.filter(s=>!s.has_invoice&&s.pay_status==="Paid").length,color:"#378ADD"},
-    {name:"No Invoice, Pending",value:STORES.filter(s=>!s.has_invoice&&s.pay_status==="Pending").length,color:"#E24B4A"},
+    {name:"Uploaded & Paid",value:stores.filter(s=>s.has_invoice&&s.pay_status==="Paid").length,color:"#1D9E75"},
+    {name:"Uploaded, Pending",value:stores.filter(s=>s.has_invoice&&s.pay_status==="Pending").length,color:"#BA7517"},
+    {name:"No Invoice, Paid",value:stores.filter(s=>!s.has_invoice&&s.pay_status==="Paid").length,color:"#378ADD"},
+    {name:"No Invoice, Pending",value:stores.filter(s=>!s.has_invoice&&s.pay_status==="Pending").length,color:"#E24B4A"},
   ];
 
-  // reminder helpers
-  const needsReminder=useMemo(()=>STORES.map(s=>({...s,urgency:urgencyOf(s),d:days(s.due_date)})).filter(s=>s.urgency).sort((a,b)=>{const pa=URGENCY[a.urgency]?.p??99,pb=URGENCY[b.urgency]?.p??99;return pa-pb||(a.d??99)-(b.d??99);}),[]);
+  const needsReminder=useMemo(()=>stores.map(s=>({...s,urgency:urgencyOf(s),d:days(s.due_date)})).filter(s=>s.urgency).sort((a,b)=>{const pa=URGENCY[a.urgency]?.p??99,pb=URGENCY[b.urgency]?.p??99;return pa-pb||(a.d??99)-(b.d??99);}),[stores]);
   const grouped=useMemo(()=>{const g={};needsReminder.forEach(s=>{if(!g[s.urgency])g[s.urgency]=[];g[s.urgency].push(s);});return g;},[needsReminder]);
   const selCount=Object.values(selected).filter(Boolean).length;
 
@@ -269,7 +321,6 @@ export default function App(){
     navigator.clipboard.writeText(text).then(()=>{setCopied(p=>({...p,[key]:true}));setTimeout(()=>setCopied(p=>({...p,[key]:false})),2000);});
   }
 
-  // tab label with badge
   function TabLabel({i,label}){
     const badge=i===6?needsReminder.length:i===1?alertCount:0;
     return <button onClick={()=>setTab(i)} style={{padding:"7px 11px",fontSize:12,fontWeight:tab===i?500:400,background:"transparent",border:"none",cursor:"pointer",color:tab===i?"var(--color-text-primary)":"var(--color-text-secondary)",borderBottom:tab===i?"2px solid var(--color-text-primary)":"2px solid transparent",marginBottom:-1,whiteSpace:"nowrap",position:"relative"}}>
@@ -279,398 +330,424 @@ export default function App(){
   }
 
   return (
-    <div style={{fontFamily:"var(--font-sans)",padding:"0.5rem 0",maxWidth:920}}>
+    <div style={{fontFamily:"var(--font-sans)",padding:"0.5rem 0",maxWidth:960}}>
       {/* Header */}
-      <div style={{marginBottom:"1rem"}}>
-        <h1 style={{fontSize:19,fontWeight:500,margin:"0 0 3px"}}>Electricity Bill Control</h1>
-        <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>{total} stores · May 2026 · {TODAY.toDateString()}</div>
-      </div>
-
-      {/* Metric strip */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:"1.25rem"}}>
-        <Card label="Total Stores" value={total}/>
-        <Card label="Invoice Uploaded" value={uploaded} sub={Math.round(uploaded/total*100)+"% compliance"} color="#185FA5"/>
-        <Card label="Payments Done" value={paid} sub={Math.round(paid/total*100)+"% of stores"} color="#3B6D11"/>
-        <Card label="Pending" value={pending} color="#854F0B"/>
-        <Card label="Overdue" value={overdue} color="#A32D2D"/>
-        <Card label="Total Amount" value={"₹"+(totalAmt/100000).toFixed(1)+"L"} sub="May 2026"/>
-      </div>
-
-      {/* Filters */}
-      <div style={{display:"flex",gap:8,marginBottom:"0.9rem",flexWrap:"wrap",alignItems:"center"}}>
-        <select value={stateF} onChange={e=>setStateF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
-          {states.map(s=><option key={s}>{s}</option>)}
-        </select>
-        <select value={respF} onChange={e=>setRespF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
-          {["All","CHETHAN","THARUN"].map(s=><option key={s}>{s}</option>)}
-        </select>
-        {(stateF!=="All"||respF!=="All")&&<button onClick={()=>{setStateF("All");setRespF("All");}} style={{fontSize:11,padding:"4px 8px"}}>✕ Clear</button>}
-        <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{filtered.length} stores</span>
-      </div>
-
-      {/* Tabs */}
-      <div style={{display:"flex",gap:0,marginBottom:"1.25rem",borderBottom:"0.5px solid var(--color-border-tertiary)",overflowX:"auto"}}>
-        {TABS.map((t,i)=><TabLabel key={t} i={i} label={t}/>)}
-      </div>
-
-      {/* ── Tab 0: Overview ────────────────────────── */}
-      {tab===0&&<div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
-          <div>
-            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Monthly Upload & Payment Trend</div>
-            <ResponsiveContainer width="100%" height={170}>
-              <BarChart data={TREND} barSize={7}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
-                <XAxis dataKey="month" tick={{fontSize:9}}/><YAxis tick={{fontSize:9}}/>
-                <Tooltip contentStyle={{fontSize:10}}/>
-                <Bar dataKey="uploaded" fill="#378ADD" name="Uploaded" radius={[2,2,0,0]}/>
-                <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[2,2,0,0]}/>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>May 2026 Status</div>
-            <ResponsiveContainer width="100%" height={170}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={2}>
-                  {pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}
-                </Pie>
-                <Tooltip contentStyle={{fontSize:10}} formatter={v=>[v+" stores"]}/>
-                <Legend iconType="square" iconSize={8} wrapperStyle={{fontSize:10}}/>
-              </PieChart>
-            </ResponsiveContainer>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1rem",flexWrap:"wrap",gap:8}}>
+        <div>
+          <h1 style={{fontSize:19,fontWeight:500,margin:"0 0 3px"}}>Electricity Bill Control</h1>
+          <div style={{fontSize:11,color:"var(--color-text-secondary)"}}>
+            {total} stores · May 2026
+            {lastSync&&<span style={{marginLeft:8,color:"var(--color-text-tertiary)"}}>· synced {lastSync.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>}
           </div>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>State-wise Summary</div>
-          <button onClick={()=>downloadCSV("state-summary.csv",["State","Stores","Uploaded","Upload %","Paid","Amount"],byState.map(s=>[s.state,s.total,s.uploaded,Math.round(s.uploaded/s.total*100)+"%",s.paid,s.amount||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
-        </div>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-            <thead><tr>{["State","Stores","Uploaded","Upload %","Paid","Amount"].map(h=><TH key={h} right={!["State"].includes(h)}>{h}</TH>)}</tr></thead>
-            <tbody>{byState.map(s=>(
-              <tr key={s.state} style={{cursor:"pointer"}} onClick={()=>{setStateF(s.state);setTab(2);}}>
-                <TD><span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:STATE_CLR[s.state]||"#888",marginRight:6}}/>{s.state}</TD>
-                <TD right>{s.total}</TD><TD right>{s.uploaded}</TD>
-                <TD right style={{color:s.uploaded/s.total>=0.8?"#3B6D11":"#854F0B"}}>{Math.round(s.uploaded/s.total*100)}%</TD>
-                <TD right>{s.paid}</TD><TD right>{fA(s.amount||null)}</TD>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      </div>}
-
-      {/* ── Tab 1: Due Alerts ──────────────────────── */}
-      {tab===1&&<div>
-        {alertCount>0&&<div style={{background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
-          <span style={{color:"#A32D2D",fontWeight:500}}>⚠ {alertCount} stores</span><span style={{color:"#791F1F"}}> have payment due within 5 days and are still pending</span>
-        </div>}
-        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-          <button onClick={()=>{const rows=filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map(s=>{const d=days(s.due_date);return[s.state,s.store,s.responsible,s.due_date,d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`,s.has_invoice?"Uploaded":"Missing",s.pay_status];});downloadCSV("due-alerts.csv",["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"],rows);}} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
-        </div>
-        <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-            <thead><tr>{["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
-            <tbody>{filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map((s,i)=>{
-              const d=days(s.due_date),isAlert=d!==null&&d>=0&&d<=5&&s.pay_status==="Pending",isOD=d!==null&&d<0&&s.pay_status==="Pending";
-              return <tr key={i} style={{background:isAlert?"#FFF8F0":isOD?"#FFF0F0":"transparent"}}>
-                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
-                <TD style={{fontWeight:isAlert||isOD?500:400}}>{s.store}</TD>
-                <TD style={{fontSize:11}}>{s.responsible}</TD>
-                <TD style={{whiteSpace:"nowrap"}}>{new Date(s.due_date).toLocaleDateString("en-IN")}</TD>
-                <TD style={{fontWeight:500,color:d<0?"#A32D2D":d<=3?"#D85A30":d<=5?"#BA7517":"#3B6D11"}}>
-                  {d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`}
-                </TD>
-                <TD><Tag t={s.has_invoice?"upload":"miss"} v={s.has_invoice?"✓ Uploaded":"Missing"}/></TD>
-                <TD><Tag t={s.pay_status==="Paid"?"paid":isOD?"overdue":"pending"} v={s.pay_status}/></TD>
-              </tr>;
-            })}</tbody>
-          </table>
-        </div>
-        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>No Due Date Entered</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-          {filtered.filter(s=>!s.due_date).map((s,i)=><span key={i} style={{background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:"var(--border-radius-md)",padding:"3px 10px",fontSize:11,color:"var(--color-text-secondary)"}}>{s.store} <span style={{color:"var(--color-text-tertiary)"}}>({s.state})</span></span>)}
-        </div>
-      </div>}
-
-      {/* ── Tab 2: Tracker ─────────────────────────── */}
-      {tab===2&&<div>
-        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-          <button onClick={()=>downloadCSV("tracker.csv",["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment"],filtered.map(s=>[s.state,s.store,s.responsible,s.due_date||"",s.units||"",s.amount||"",s.has_invoice?"Uploaded":"Missing",s.pay_status]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
-        </div>
-        <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-          <thead><tr>{["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment","Notes"].map(h=><TH key={h} right={["Units","Amount"].includes(h)}>{h}</TH>)}</tr></thead>
-          <tbody>{filtered.map((s,i)=>(
-            <tr key={i}>
-              <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
-              <TD style={{fontWeight:500,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
-              <TD style={{fontSize:11}}>{s.responsible}</TD>
-              <TD style={{whiteSpace:"nowrap",fontSize:11}}>{s.due_date?new Date(s.due_date).toLocaleDateString("en-IN"):"—"}</TD>
-              <TD right>{fN(s.units)}</TD>
-              <TD right>{fA(s.amount)}</TD>
-              <TD><Tag t={s.has_invoice?"upload":"miss"} v={s.has_invoice?"✓ Uploaded":"Missing"}/></TD>
-              <TD><Tag t={s.pay_status==="Paid"?"paid":"pending"} v={s.pay_status}/></TD>
-              <TD style={{fontSize:10,color:"var(--color-text-tertiary)"}}>
-                {s.units&&!s.amount?"⚠ Amt missing":!s.units&&s.has_invoice?"⚠ Units missing":""}
-              </TD>
-            </tr>
-          ))}</tbody>
-        </table>
-        </div>
-      </div>}
-
-      {/* ── Tab 3: Payments ────────────────────────── */}
-      {tab===3&&<div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
-          <div>
-            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Paid vs Pending by State</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={byState.slice(0,8)} layout="vertical" barSize={9}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
-                <XAxis type="number" tick={{fontSize:9}}/><YAxis type="category" dataKey="state" tick={{fontSize:9}} width={78}/>
-                <Tooltip contentStyle={{fontSize:10}}/>
-                <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[0,2,2,0]}/>
-                <Bar dataKey="total" fill="#E24B4A" name="Total" radius={[0,2,2,0]}/>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Pending Payments</div>
-            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:210,overflowY:"auto"}}>
-              {filtered.filter(s=>s.pay_status==="Pending").map((s,i)=>{
-                const d=days(s.due_date);
-                return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:d!==null&&d<0?"#FFF0F0":"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",fontSize:12}}>
-                  <div><div style={{fontWeight:500}}>{s.store}</div><div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{s.state} · {s.responsible}</div></div>
-                  <div style={{textAlign:"right"}}>
-                    {s.amount&&<div style={{fontWeight:500,color:"#854F0B"}}>{fA(s.amount)}</div>}
-                    {d!==null&&<div style={{fontSize:10,color:d<0?"#A32D2D":"#854F0B"}}>{d<0?`${Math.abs(d)}d overdue`:`Due in ${d}d`}</div>}
-                  </div>
-                </div>;
-              })}
-            </div>
-          </div>
-        </div>
-      </div>}
-
-      {/* ── Tab 4: MoM ─────────────────────────────── */}
-      {tab===4&&<div>
-        <div style={{marginBottom:"1.5rem"}}>
-          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Total Monthly Bill Trend</div>
-          <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={TREND}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
-              <XAxis dataKey="month" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}} tickFormatter={v=>"₹"+(v/100000).toFixed(1)+"L"}/>
-              <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+(v/100000).toFixed(2)+"L"]}/>
-              <Line type="monotone" dataKey="amount" stroke="#1D9E75" strokeWidth={2} dot={{r:3}} name="Total Amount"/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>May vs April — Store-wise</div>
-          <button onClick={()=>downloadCSV("mom-comparison.csv",["Store","State","Apr Units","May Units","Change","% Change","Apr Amount","May Amount"],momData.map(s=>[s.full,s.state,s.apr,s.may,s.chg,s.pct+"%",s.aprA||"",s.mayA||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
-        </div>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-            <thead><tr>{["Store","State","Apr Units","May Units","Change","% Chg","Apr Amt","May Amt"].map(h=><TH key={h} right={!["Store","State"].includes(h)}>{h}</TH>)}</tr></thead>
-            <tbody>{momData.map((s,i)=>(
-              <tr key={i}>
-                <TD style={{fontWeight:500,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
-                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
-                <TD right>{fN(s.apr)}</TD><TD right style={{fontWeight:500}}>{fN(s.may)}</TD>
-                <TD right style={{color:s.chg>0?"#A32D2D":"#3B6D11"}}>{s.chg>0?"+":""}{fN(s.chg)}</TD>
-                <TD right><span style={{background:s.pct>10?"#FCEBEB":s.pct<-10?"#EAF3DE":"var(--color-background-secondary)",color:s.pct>10?"#A32D2D":s.pct<-10?"#3B6D11":"var(--color-text-secondary)",padding:"1px 6px",borderRadius:8,fontSize:11}}>{s.pct>0?"+":""}{s.pct}%</span></TD>
-                <TD right style={{fontSize:11}}>{fA(s.aprA||null)}</TD>
-                <TD right style={{fontSize:11}}>{fA(s.mayA||null)}</TD>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      </div>}
-
-      {/* ── Tab 5: High Bills ──────────────────────── */}
-      {tab===5&&<div>
-        <div style={{background:"#FAEEDA",border:"0.5px solid #FAC775",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
-          Avg rate: <strong>₹{avgPU}/unit</strong> · Stores above ₹{Math.round(highThr)}/unit flagged as high-cost
-        </div>
-        <div style={{marginBottom:"1.5rem"}}>
-          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Per-Unit Rate (₹/kWh) — Top 15</div>
-          <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={perUnit.slice(0,15)} layout="vertical" barSize={9}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
-              <XAxis type="number" tick={{fontSize:9}} tickFormatter={v=>"₹"+v}/>
-              <YAxis type="category" dataKey="store" tick={{fontSize:8}} width={130}/>
-              <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+v+"/unit"]}/>
-              <Bar dataKey="pu" radius={[0,2,2,0]} name="Rate">
-                {perUnit.slice(0,15).map((d,i)=><Cell key={i} fill={d.pu>highThr?"#E24B4A":d.pu>avgPU?"#EF9F27":"#1D9E75"}/>)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>High-Rate Stores (Above ₹{Math.round(highThr)}/unit)</div>
-          <button onClick={()=>downloadCSV("high-bills.csv",["State","Store","Units","Amount","Rate per Unit (₹)","vs Avg"],perUnit.filter(s=>s.pu>highThr).map(s=>[s.state,s.store,s.units,s.amount,s.pu,"+"+Math.round((s.pu-avgPU)/avgPU*100)+"%"]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
-        </div>
-        <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-            <thead><tr>{["State","Store","Units","Amount","₹/Unit","vs Avg","Action"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
-            <tbody>{perUnit.filter(s=>s.pu>highThr).map((s,i)=>(
-              <tr key={i} style={{background:"#FFF8F5"}}>
-                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
-                <TD style={{fontWeight:500}}>{s.store}</TD>
-                <TD>{fN(s.units)}</TD><TD>{fA(s.amount)}</TD>
-                <TD style={{fontWeight:500,color:"#A32D2D"}}>₹{s.pu}</TD>
-                <TD style={{color:"#A32D2D"}}>+{Math.round((s.pu-avgPU)/avgPU*100)}%</TD>
-                <TD style={{fontSize:11,color:"var(--color-text-tertiary)"}}>Review tariff / meter</TD>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-        <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Top 5 Highest Bills</div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          {[...STORES].filter(s=>s.amount).sort((a,b)=>b.amount-a.amount).slice(0,5).map((s,i)=>(
-            <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"10px 14px",minWidth:130,flex:"1 1 130px"}}>
-              <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginBottom:3}}>{s.state}</div>
-              <div style={{fontSize:12,fontWeight:500,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</div>
-              <div style={{fontSize:18,fontWeight:500,color:i===0?"#A32D2D":"var(--color-text-primary)"}}>{fA(s.amount)}</div>
-              <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{fN(s.units)} kWh</div>
-            </div>
-          ))}
-        </div>
-      </div>}
-
-      {/* ── Tab 6: Reminders ───────────────────────── */}
-      {tab===6&&<div>
-
-        {/* Settings panel (collapsible) */}
-        <div style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",marginBottom:"1rem",overflow:"hidden"}}>
-          <button onClick={()=>setSettingsOpen(p=>!p)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontSize:13,fontWeight:500}}>
-            <span>⚙ Contact Settings</span>
-            <span style={{fontSize:11,color:"var(--color-text-secondary)"}}>{settingsOpen?"▲ Hide":"▼ Configure emails & WhatsApp"}</span>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <a href={`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${SHEET_GID}`} target="_blank" rel="noreferrer"
+            style={{fontSize:11,padding:"5px 10px",borderRadius:"var(--border-radius-md)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",color:"var(--color-text-secondary)",textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+            📊 Open Sheet
+          </a>
+          <button onClick={loadSheet} disabled={loading} style={{fontSize:11,padding:"5px 10px",borderRadius:"var(--border-radius-md)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",color:"var(--color-text-secondary)",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <span style={loading?{display:"inline-block",animation:"spin .8s linear infinite"}:{}}>{loading?"⟳":"↻"}</span>
+            {loading?"Syncing…":"Sync"}
           </button>
-          {settingsOpen&&<div style={{padding:"0 14px 14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {["CHETHAN","THARUN"].map(name=>(
-              <div key={name} style={{background:"var(--color-background-primary)",borderRadius:"var(--border-radius-sm)",padding:"10px 12px"}}>
-                <div style={{fontWeight:500,fontSize:13,marginBottom:8}}>{name}</div>
-                <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>Email</label>
-                <input type="email" placeholder={`${name.toLowerCase()}@kushals.com`} value={contacts[name]} onChange={e=>setContacts(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",marginBottom:8}}/>
-                <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>WhatsApp (with country code)</label>
-                <input type="tel" placeholder="+91 98765 43210" value={waNum[name]} onChange={e=>setWaNum(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)"}}/>
-              </div>
-            ))}
-          </div>}
+        </div>
+      </div>
+
+      {/* Sync error banner */}
+      {syncErr&&<div style={{background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:"var(--border-radius-md)",padding:"10px 14px",marginBottom:"1rem",fontSize:12}}>
+        <div style={{color:"#A32D2D",fontWeight:500,marginBottom:4}}>⚠ Could not load sheet data: {syncErr}</div>
+        <div style={{color:"#791F1F",lineHeight:1.6}}>
+          To connect your Google Sheet, go to <strong>File → Share → Publish to web</strong> in the spreadsheet, select the sheet tab, choose <strong>CSV</strong> format, and click <strong>Publish</strong>.
+          Then click <strong>Sync</strong> above.
+        </div>
+      </div>}
+
+      {/* Loading skeleton */}
+      {loading&&stores.length===0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:"1.25rem"}}>
+        {[...Array(6)].map((_,i)=><div key={i} style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"0.8rem 1rem",height:68,opacity:0.5}}/>)}
+      </div>}
+
+      {stores.length>0&&<>
+        {/* Metric strip */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:"1.25rem"}}>
+          <Card label="Total Stores" value={total}/>
+          <Card label="Invoice Uploaded" value={uploaded} sub={Math.round(uploaded/total*100)+"% compliance"} color="#185FA5"/>
+          <Card label="Payments Done" value={paid} sub={Math.round(paid/total*100)+"% of stores"} color="#3B6D11"/>
+          <Card label="Pending" value={pending} color="#854F0B"/>
+          <Card label="Overdue" value={overdue} color="#A32D2D"/>
+          <Card label="Total Amount" value={"₹"+(totalAmt/100000).toFixed(1)+"L"} sub="May 2026"/>
         </div>
 
-        {/* Urgency pills */}
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:"1rem"}}>
-          {Object.entries(URGENCY).map(([k,cfg])=>{const c=(grouped[k]||[]).length;if(!c)return null;
-            return <div key={k} style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:20,padding:"3px 10px",fontSize:12,color:cfg.color,fontWeight:500}}>{cfg.icon} {c} {cfg.label}</div>;
-          })}
-          {needsReminder.length===0&&<div style={{fontSize:13,color:"var(--color-text-tertiary)"}}>🎉 All stores up to date — no reminders needed!</div>}
+        {/* Filters */}
+        <div style={{display:"flex",gap:8,marginBottom:"0.9rem",flexWrap:"wrap",alignItems:"center"}}>
+          <select value={stateF} onChange={e=>setStateF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
+            {states.map(s=><option key={s}>{s}</option>)}
+          </select>
+          <select value={respF} onChange={e=>setRespF(e.target.value)} style={{fontSize:12,padding:"4px 8px"}}>
+            {["All","CHETHAN","THARUN"].map(s=><option key={s}>{s}</option>)}
+          </select>
+          {(stateF!=="All"||respF!=="All")&&<button onClick={()=>{setStateF("All");setRespF("All");}} style={{fontSize:11,padding:"4px 8px"}}>✕ Clear</button>}
+          <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{filtered.length} stores</span>
         </div>
 
-        {/* Toolbar */}
-        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:"1rem",flexWrap:"wrap"}}>
-          <div style={{display:"flex",gap:2,background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:3}}>
-            {[["whatsapp","💬 WhatsApp"],["email","✉ Email"]].map(([t,l])=>(
-              <button key={t} onClick={()=>setMsgType(t)} style={{padding:"5px 11px",fontSize:12,fontWeight:msgType===t?500:400,background:msgType===t?"var(--color-background-primary)":"transparent",border:msgType===t?"0.5px solid var(--color-border-secondary)":"none",borderRadius:"var(--border-radius-sm)",cursor:"pointer"}}>{l}</button>
-            ))}
+        {/* Tabs */}
+        <div style={{display:"flex",gap:0,marginBottom:"1.25rem",borderBottom:"0.5px solid var(--color-border-tertiary)",overflowX:"auto"}}>
+          {TABS.map((t,i)=><TabLabel key={t} i={i} label={t}/>)}
+        </div>
+
+        {/* ── Tab 0: Overview ────────────────────────── */}
+        {tab===0&&<div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Monthly Upload & Payment Trend</div>
+              <ResponsiveContainer width="100%" height={170}>
+                <BarChart data={TREND} barSize={7}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                  <XAxis dataKey="month" tick={{fontSize:9}}/><YAxis tick={{fontSize:9}}/>
+                  <Tooltip contentStyle={{fontSize:10}}/>
+                  <Bar dataKey="uploaded" fill="#378ADD" name="Uploaded" radius={[2,2,0,0]}/>
+                  <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[2,2,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>May 2026 Status</div>
+              <ResponsiveContainer width="100%" height={170}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={2}>
+                    {pieData.map((d,i)=><Cell key={i} fill={d.color}/>)}
+                  </Pie>
+                  <Tooltip contentStyle={{fontSize:10}} formatter={v=>[v+" stores"]}/>
+                  <Legend iconType="square" iconSize={8} wrapperStyle={{fontSize:10}}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          {selCount>0&&<>
-            <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>{selCount} selected</span>
-            <button onClick={batchSend} disabled={batchBusy} style={{padding:"6px 14px",fontSize:12,fontWeight:500,background:"#185FA5",color:"#fff",border:"none",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>
-              {batchBusy?"Sending…":`✉ Send ${selCount} Email${selCount>1?"s":""}`}
-            </button>
-            <button onClick={()=>setSelected({})} style={{fontSize:12,padding:"6px 10px",background:"transparent",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>Clear</button>
-          </>}
-        </div>
-
-        {batchRes&&<div style={{background:batchRes.fail===0?"#EAF3DE":"#FAEEDA",border:`0.5px solid ${batchRes.fail===0?"#8AC44A":"#FAC775"}`,borderRadius:"var(--border-radius-md)",padding:"8px 14px",fontSize:12,marginBottom:"1rem",color:batchRes.fail===0?"#3B6D11":"#854F0B"}}>
-          {batchRes.fail===0?`✓ All ${batchRes.ok} emails sent`:`${batchRes.ok} sent · ${batchRes.fail} failed — check Settings`}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>State-wise Summary</div>
+            <button onClick={()=>downloadCSV("state-summary.csv",["State","Stores","Uploaded","Upload %","Paid","Amount"],byState.map(s=>[s.state,s.total,s.uploaded,Math.round(s.uploaded/s.total*100)+"%",s.paid,s.amount||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+          </div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead><tr>{["State","Stores","Uploaded","Upload %","Paid","Amount"].map(h=><TH key={h} right={!["State"].includes(h)}>{h}</TH>)}</tr></thead>
+              <tbody>{byState.map(s=>(
+                <tr key={s.state} style={{cursor:"pointer"}} onClick={()=>{setStateF(s.state);setTab(2);}}>
+                  <TD><span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:STATE_CLR[s.state]||"#888",marginRight:6}}/>{s.state}</TD>
+                  <TD right>{s.total}</TD><TD right>{s.uploaded}</TD>
+                  <TD right style={{color:s.uploaded/s.total>=0.8?"#3B6D11":"#854F0B"}}>{Math.round(s.uploaded/s.total*100)}%</TD>
+                  <TD right>{s.paid}</TD><TD right>{fA(s.amount||null)}</TD>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
         </div>}
 
-        {/* Reminder groups */}
-        {Object.entries(URGENCY).map(([urgency,cfg])=>{
-          const stores=grouped[urgency];if(!stores?.length)return null;
-          return <div key={urgency} style={{marginBottom:"1.5rem"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span>{cfg.icon}</span>
-                <span style={{fontWeight:500,fontSize:13,color:cfg.color}}>{cfg.label}</span>
-                <span style={{background:cfg.bg,color:cfg.color,fontSize:11,padding:"1px 7px",borderRadius:10,fontWeight:500}}>{stores.length}</span>
-              </div>
-              <button onClick={()=>selAll(urgency)} style={{fontSize:11,color:"var(--color-text-secondary)",background:"transparent",border:"none",cursor:"pointer",textDecoration:"underline"}}>
-                {stores.every(s=>selected[s.store])?"Deselect all":"Select all"}
-              </button>
-            </div>
+        {/* ── Tab 1: Due Alerts ──────────────────────── */}
+        {tab===1&&<div>
+          {alertCount>0&&<div style={{background:"#FCEBEB",border:"0.5px solid #F09595",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
+            <span style={{color:"#A32D2D",fontWeight:500}}>⚠ {alertCount} stores</span><span style={{color:"#791F1F"}}> have payment due within 5 days and are still pending</span>
+          </div>}
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+            <button onClick={()=>{const rows=filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map(s=>{const d=days(s.due_date);return[s.state,s.store,s.responsible,s.due_date,d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`,s.has_invoice?"Uploaded":"Missing",s.pay_status];});downloadCSV("due-alerts.csv",["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"],rows);}} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+          </div>
+          <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead><tr>{["State","Store","Responsible","Due Date","Days Left","Invoice","Payment"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>{filtered.filter(s=>s.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)).map((s,i)=>{
+                const d=days(s.due_date),isAlert=d!==null&&d>=0&&d<=5&&s.pay_status==="Pending",isOD=d!==null&&d<0&&s.pay_status==="Pending";
+                return <tr key={i} style={{background:isAlert?"#FFF8F0":isOD?"#FFF0F0":"transparent"}}>
+                  <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                  <TD style={{fontWeight:isAlert||isOD?500:400}}>{s.store}</TD>
+                  <TD style={{fontSize:11}}>{s.responsible}</TD>
+                  <TD style={{whiteSpace:"nowrap"}}>{new Date(s.due_date).toLocaleDateString("en-IN")}</TD>
+                  <TD style={{fontWeight:500,color:d<0?"#A32D2D":d<=3?"#D85A30":d<=5?"#BA7517":"#3B6D11"}}>
+                    {d<0?`${Math.abs(d)}d overdue`:d===0?"Today":`${d} days`}
+                  </TD>
+                  <TD><Tag t={s.has_invoice?"upload":"miss"} v={s.has_invoice?"✓ Uploaded":"Missing"}/></TD>
+                  <TD><Tag t={s.pay_status==="Paid"?"paid":isOD?"overdue":"pending"} v={s.pay_status}/></TD>
+                </tr>;
+              })}</tbody>
+            </table>
+          </div>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>No Due Date Entered</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {filtered.filter(s=>!s.due_date).map((s,i)=><span key={i} style={{background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:"var(--border-radius-md)",padding:"3px 10px",fontSize:11,color:"var(--color-text-secondary)"}}>{s.store} <span style={{color:"var(--color-text-tertiary)"}}>({s.state})</span></span>)}
+          </div>
+        </div>}
 
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {stores.map(store=>{
-                const mk=store.store+msgType,msg=msgCache[mk],isExp=expanded===store.store,
-                      isSending=sending[store.store],sentSt=sent[store.store];
-                return <div key={store.store} style={{background:"var(--color-background-secondary)",border:`0.5px solid ${isExp?cfg.border:"var(--color-border-tertiary)"}`,borderRadius:"var(--border-radius-md)",overflow:"hidden"}}>
-                  {/* Row */}
-                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",flexWrap:"wrap"}}>
-                    <input type="checkbox" checked={!!selected[store.store]} onChange={e=>setSelected(p=>({...p,[store.store]:e.target.checked}))} style={{cursor:"pointer",flexShrink:0}}/>
-                    <div style={{flex:1,minWidth:130}}>
-                      <div style={{fontWeight:500,fontSize:13}}>{store.store}</div>
-                      <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:1}}>
-                        {store.state} · {store.responsible}
-                        {store.due_date&&<span style={{marginLeft:8,color:cfg.color,fontWeight:500}}>
-                          {store.d<0?`${Math.abs(store.d)}d overdue`:store.d===0?"Due today":`${store.d}d left`}
-                        </span>}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:5,fontSize:11,flexShrink:0,flexWrap:"wrap"}}>
-                      {!store.has_invoice&&<span style={{background:"#F1EFE8",color:"#5F5E5A",padding:"2px 6px",borderRadius:8}}>No invoice</span>}
-                      {store.has_invoice&&!store.amount&&<span style={{background:"#FAEEDA",color:"#854F0B",padding:"2px 6px",borderRadius:8}}>Amt missing</span>}
-                      {store.amount&&<span style={{background:"var(--color-background-primary)",color:"var(--color-text-secondary)",padding:"2px 6px",borderRadius:8}}>₹{store.amount.toLocaleString("en-IN")}</span>}
-                    </div>
-                    <div style={{display:"flex",gap:5,flexShrink:0}}>
-                      <button onClick={()=>toggleExpand(store)} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-primary)",cursor:"pointer"}}>
-                        {isExp?"▲ Hide":"💬 Preview"}
-                      </button>
-                      {msgType==="whatsapp"&&waNum[store.responsible]&&msg&&msg!=="loading"&&(
-                        <a href={`https://wa.me/${waNum[store.responsible].replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"
-                          style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:"#25D366",color:"#fff",textDecoration:"none"}}>WA ↗</a>
-                      )}
-                      {msgType==="email"&&(
-                        <button onClick={()=>handleSend(store)} disabled={isSending||sentSt==="sent"} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:sentSt==="sent"?"#EAF3DE":sentSt==="failed"?"#FCEBEB":"#185FA5",color:sentSt?"(sentSt==='sent'?'#3B6D11':'#A32D2D')":"#fff",border:"none",cursor:"pointer"}}>
-                          {isSending?"…":sentSt==="sent"?"✓":sentSt==="failed"?"✗":"✉"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {/* Message panel */}
-                  {isExp&&<div style={{borderTop:"0.5px solid var(--color-border-tertiary)",padding:"10px 12px",background:"var(--color-background-primary)"}}>
-                    {!msg||msg==="loading"?(
-                      <div style={{fontSize:12,color:"var(--color-text-tertiary)",display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--color-border-secondary)",borderTopColor:"var(--color-text-primary)",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
-                        Generating {msgType} message…
-                      </div>
-                    ):(
-                      <div>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                          <span style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>{msgType==="whatsapp"?"WhatsApp Message":"Email Body"}</span>
-                          <div style={{display:"flex",gap:5}}>
-                            <button onClick={()=>copyMsg(mk,msg)} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>
-                              {copied[mk]?"✓ Copied":"Copy"}
-                            </button>
-                            <button onClick={async()=>{setMsgCache(p=>({...p,[mk]:"loading"}));const m=await apiMsg(store,msgType);setMsgCache(p=>({...p,[mk]:m}));}} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>↻</button>
-                          </div>
-                        </div>
-                        <div style={{fontSize:13,lineHeight:1.65,whiteSpace:"pre-wrap",background:"var(--color-background-secondary)",padding:"9px 11px",borderRadius:"var(--border-radius-sm)"}}>{msg}</div>
-                        {msgType==="whatsapp"&&!waNum[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s WhatsApp in Settings for a direct send link.</div>}
-                        {msgType==="email"&&!contacts[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s email in Settings to send directly.</div>}
-                      </div>
-                    )}
-                  </div>}
-                </div>;
-              })}
+        {/* ── Tab 2: Tracker ─────────────────────────── */}
+        {tab===2&&<div>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+            <button onClick={()=>downloadCSV("tracker.csv",["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment","Remarks"],filtered.map(s=>[s.state,s.store,s.responsible,s.due_date||"",s.units||"",s.amount||"",s.has_invoice?"Uploaded":"Missing",s.pay_status,s.remarks||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+          </div>
+          <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead><tr>{["State","Store","Responsible","Due Date","Units","Amount","Invoice","Payment","Remarks"].map(h=><TH key={h} right={["Units","Amount"].includes(h)}>{h}</TH>)}</tr></thead>
+            <tbody>{filtered.map((s,i)=>(
+              <tr key={i}>
+                <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                <TD style={{fontWeight:500,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
+                <TD style={{fontSize:11}}>{s.responsible}</TD>
+                <TD style={{whiteSpace:"nowrap",fontSize:11}}>{s.due_date?new Date(s.due_date).toLocaleDateString("en-IN"):"—"}</TD>
+                <TD right>{fN(s.units)}</TD>
+                <TD right>{fA(s.amount)}</TD>
+                <TD>
+                  {s.invoice_link
+                    ? <a href={s.invoice_link} target="_blank" rel="noreferrer" style={{color:"#185FA5",fontSize:11,textDecoration:"none"}}>↗ View</a>
+                    : <Tag t="miss" v="Missing"/>}
+                </TD>
+                <TD><Tag t={s.pay_status==="Paid"?"paid":"pending"} v={s.pay_status}/></TD>
+                <TD style={{fontSize:10,color:"var(--color-text-tertiary)",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.remarks||""}</TD>
+              </tr>
+            ))}</tbody>
+          </table>
+          </div>
+        </div>}
+
+        {/* ── Tab 3: Payments ────────────────────────── */}
+        {tab===3&&<div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1.5rem"}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Paid vs Pending by State</div>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={byState.slice(0,8)} layout="vertical" barSize={9}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
+                  <XAxis type="number" tick={{fontSize:9}}/><YAxis type="category" dataKey="state" tick={{fontSize:9}} width={78}/>
+                  <Tooltip contentStyle={{fontSize:10}}/>
+                  <Bar dataKey="paid" fill="#1D9E75" name="Paid" radius={[0,2,2,0]}/>
+                  <Bar dataKey="total" fill="#E24B4A" name="Total" radius={[0,2,2,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>;
-        })}
-      </div>}
+            <div>
+              <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Pending Payments</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:210,overflowY:"auto"}}>
+                {filtered.filter(s=>s.pay_status==="Pending").map((s,i)=>{
+                  const d=days(s.due_date);
+                  return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:d!==null&&d<0?"#FFF0F0":"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",fontSize:12}}>
+                    <div><div style={{fontWeight:500}}>{s.store}</div><div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{s.state} · {s.responsible}</div></div>
+                    <div style={{textAlign:"right"}}>
+                      {s.amount&&<div style={{fontWeight:500,color:"#854F0B"}}>{fA(s.amount)}</div>}
+                      {d!==null&&<div style={{fontSize:10,color:d<0?"#A32D2D":"#854F0B"}}>{d<0?`${Math.abs(d)}d overdue`:`Due in ${d}d`}</div>}
+                    </div>
+                  </div>;
+                })}
+              </div>
+            </div>
+          </div>
+        </div>}
+
+        {/* ── Tab 4: MoM ─────────────────────────────── */}
+        {tab===4&&<div>
+          <div style={{marginBottom:"1.5rem"}}>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Total Monthly Bill Trend</div>
+            <ResponsiveContainer width="100%" height={150}>
+              <LineChart data={TREND}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <XAxis dataKey="month" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}} tickFormatter={v=>"₹"+(v/100000).toFixed(1)+"L"}/>
+                <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+(v/100000).toFixed(2)+"L"]}/>
+                <Line type="monotone" dataKey="amount" stroke="#1D9E75" strokeWidth={2} dot={{r:3}} name="Total Amount"/>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>May vs April — Store-wise</div>
+            <button onClick={()=>downloadCSV("mom-comparison.csv",["Store","State","Apr Units","May Units","Change","% Change","Apr Amount","May Amount"],momData.map(s=>[s.full,s.state,s.apr,s.may,s.chg,s.pct+"%",s.aprA||"",s.mayA||""]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+          </div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead><tr>{["Store","State","Apr Units","May Units","Change","% Chg","Apr Amt","May Amt"].map(h=><TH key={h} right={!["Store","State"].includes(h)}>{h}</TH>)}</tr></thead>
+              <tbody>{momData.map((s,i)=>(
+                <tr key={i}>
+                  <TD style={{fontWeight:500,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</TD>
+                  <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                  <TD right>{fN(s.apr)}</TD><TD right style={{fontWeight:500}}>{fN(s.may)}</TD>
+                  <TD right style={{color:s.chg>0?"#A32D2D":"#3B6D11"}}>{s.chg>0?"+":""}{fN(s.chg)}</TD>
+                  <TD right><span style={{background:s.pct>10?"#FCEBEB":s.pct<-10?"#EAF3DE":"var(--color-background-secondary)",color:s.pct>10?"#A32D2D":s.pct<-10?"#3B6D11":"var(--color-text-secondary)",padding:"1px 6px",borderRadius:8,fontSize:11}}>{s.pct>0?"+":""}{s.pct}%</span></TD>
+                  <TD right style={{fontSize:11}}>{fA(s.aprA||null)}</TD>
+                  <TD right style={{fontSize:11}}>{fA(s.mayA||null)}</TD>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>}
+
+        {/* ── Tab 5: High Bills ──────────────────────── */}
+        {tab===5&&<div>
+          <div style={{background:"#FAEEDA",border:"0.5px solid #FAC775",borderRadius:"var(--border-radius-md)",padding:"9px 14px",marginBottom:"1rem",fontSize:12}}>
+            Avg rate: <strong>₹{avgPU}/unit</strong> · Stores above ₹{Math.round(highThr)}/unit flagged as high-cost
+          </div>
+          <div style={{marginBottom:"1.5rem"}}>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Per-Unit Rate (₹/kWh) — Top 15</div>
+            <ResponsiveContainer width="100%" height={210}>
+              <BarChart data={perUnit.slice(0,15)} layout="vertical" barSize={9}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false}/>
+                <XAxis type="number" tick={{fontSize:9}} tickFormatter={v=>"₹"+v}/>
+                <YAxis type="category" dataKey="store" tick={{fontSize:8}} width={130}/>
+                <Tooltip contentStyle={{fontSize:10}} formatter={v=>["₹"+v+"/unit"]}/>
+                <Bar dataKey="pu" radius={[0,2,2,0]} name="Rate">
+                  {perUnit.slice(0,15).map((d,i)=><Cell key={i} fill={d.pu>highThr?"#E24B4A":d.pu>avgPU?"#EF9F27":"#1D9E75"}/>)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>High-Rate Stores (Above ₹{Math.round(highThr)}/unit)</div>
+            <button onClick={()=>downloadCSV("high-bills.csv",["State","Store","Units","Amount","Rate per Unit (₹)","vs Avg"],perUnit.filter(s=>s.pu>highThr).map(s=>[s.state,s.store,s.units,s.amount,s.pu,"+"+Math.round((s.pu-avgPU)/avgPU*100)+"%"]))} style={{fontSize:11,padding:"3px 9px",background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer",color:"var(--color-text-secondary)"}}>↓ CSV</button>
+          </div>
+          <div style={{overflowX:"auto",marginBottom:"1.5rem"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead><tr>{["State","Store","Units","Amount","₹/Unit","vs Avg","Action"].map(h=><TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>{perUnit.filter(s=>s.pu>highThr).map((s,i)=>(
+                <tr key={i} style={{background:"#FFF8F5"}}>
+                  <TD style={{fontSize:11,color:"var(--color-text-secondary)"}}>{s.state}</TD>
+                  <TD style={{fontWeight:500}}>{s.store}</TD>
+                  <TD>{fN(s.units)}</TD><TD>{fA(s.amount)}</TD>
+                  <TD style={{fontWeight:500,color:"#A32D2D"}}>₹{s.pu}</TD>
+                  <TD style={{color:"#A32D2D"}}>+{Math.round((s.pu-avgPU)/avgPU*100)}%</TD>
+                  <TD style={{fontSize:11,color:"var(--color-text-tertiary)"}}>Review tariff / meter</TD>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          <div style={{fontSize:11,fontWeight:500,color:"var(--color-text-secondary)",marginBottom:6,textTransform:"uppercase",letterSpacing:".04em"}}>Top 5 Highest Bills</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[...stores].filter(s=>s.amount).sort((a,b)=>b.amount-a.amount).slice(0,5).map((s,i)=>(
+              <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:"10px 14px",minWidth:130,flex:"1 1 130px"}}>
+                <div style={{fontSize:10,color:"var(--color-text-tertiary)",marginBottom:3}}>{s.state}</div>
+                <div style={{fontSize:12,fontWeight:500,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.store}</div>
+                <div style={{fontSize:18,fontWeight:500,color:i===0?"#A32D2D":"var(--color-text-primary)"}}>{fA(s.amount)}</div>
+                <div style={{fontSize:10,color:"var(--color-text-tertiary)"}}>{fN(s.units)} kWh</div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {/* ── Tab 6: Reminders ───────────────────────── */}
+        {tab===6&&<div>
+          <div style={{background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",marginBottom:"1rem",overflow:"hidden"}}>
+            <button onClick={()=>setSettingsOpen(p=>!p)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"transparent",border:"none",cursor:"pointer",fontSize:13,fontWeight:500}}>
+              <span>⚙ Contact Settings</span>
+              <span style={{fontSize:11,color:"var(--color-text-secondary)"}}>{settingsOpen?"▲ Hide":"▼ Configure emails & WhatsApp"}</span>
+            </button>
+            {settingsOpen&&<div style={{padding:"0 14px 14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {["CHETHAN","THARUN"].map(name=>(
+                <div key={name} style={{background:"var(--color-background-primary)",borderRadius:"var(--border-radius-sm)",padding:"10px 12px"}}>
+                  <div style={{fontWeight:500,fontSize:13,marginBottom:8}}>{name}</div>
+                  <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>Email</label>
+                  <input type="email" placeholder={`${name.toLowerCase()}@kushals.com`} value={contacts[name]} onChange={e=>setContacts(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",marginBottom:8}}/>
+                  <label style={{fontSize:11,color:"var(--color-text-secondary)",display:"block",marginBottom:3}}>WhatsApp (with country code)</label>
+                  <input type="tel" placeholder="+91 98765 43210" value={waNum[name]} onChange={e=>setWaNum(p=>({...p,[name]:e.target.value}))} style={{width:"100%",fontSize:12,padding:"5px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)"}}/>
+                </div>
+              ))}
+            </div>}
+          </div>
+
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:"1rem"}}>
+            {Object.entries(URGENCY).map(([k,cfg])=>{const c=(grouped[k]||[]).length;if(!c)return null;
+              return <div key={k} style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:20,padding:"3px 10px",fontSize:12,color:cfg.color,fontWeight:500}}>{cfg.icon} {c} {cfg.label}</div>;
+            })}
+            {needsReminder.length===0&&<div style={{fontSize:13,color:"var(--color-text-tertiary)"}}>🎉 All stores up to date — no reminders needed!</div>}
+          </div>
+
+          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:"1rem",flexWrap:"wrap"}}>
+            <div style={{display:"flex",gap:2,background:"var(--color-background-secondary)",borderRadius:"var(--border-radius-md)",padding:3}}>
+              {[["whatsapp","💬 WhatsApp"],["email","✉ Email"]].map(([t,l])=>(
+                <button key={t} onClick={()=>setMsgType(t)} style={{padding:"5px 11px",fontSize:12,fontWeight:msgType===t?500:400,background:msgType===t?"var(--color-background-primary)":"transparent",border:msgType===t?"0.5px solid var(--color-border-secondary)":"none",borderRadius:"var(--border-radius-sm)",cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
+            {selCount>0&&<>
+              <span style={{fontSize:12,color:"var(--color-text-secondary)"}}>{selCount} selected</span>
+              <button onClick={batchSend} disabled={batchBusy} style={{padding:"6px 14px",fontSize:12,fontWeight:500,background:"#185FA5",color:"#fff",border:"none",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>
+                {batchBusy?"Sending…":`✉ Send ${selCount} Email${selCount>1?"s":""}`}
+              </button>
+              <button onClick={()=>setSelected({})} style={{fontSize:12,padding:"6px 10px",background:"transparent",border:"0.5px solid var(--color-border-secondary)",borderRadius:"var(--border-radius-md)",cursor:"pointer"}}>Clear</button>
+            </>}
+          </div>
+
+          {batchRes&&<div style={{background:batchRes.fail===0?"#EAF3DE":"#FAEEDA",border:`0.5px solid ${batchRes.fail===0?"#8AC44A":"#FAC775"}`,borderRadius:"var(--border-radius-md)",padding:"8px 14px",fontSize:12,marginBottom:"1rem",color:batchRes.fail===0?"#3B6D11":"#854F0B"}}>
+            {batchRes.fail===0?`✓ All ${batchRes.ok} emails sent`:`${batchRes.ok} sent · ${batchRes.fail} failed — check Settings`}
+          </div>}
+
+          {Object.entries(URGENCY).map(([urgency,cfg])=>{
+            const storeList=grouped[urgency];if(!storeList?.length)return null;
+            return <div key={urgency} style={{marginBottom:"1.5rem"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span>{cfg.icon}</span>
+                  <span style={{fontWeight:500,fontSize:13,color:cfg.color}}>{cfg.label}</span>
+                  <span style={{background:cfg.bg,color:cfg.color,fontSize:11,padding:"1px 7px",borderRadius:10,fontWeight:500}}>{storeList.length}</span>
+                </div>
+                <button onClick={()=>selAll(urgency)} style={{fontSize:11,color:"var(--color-text-secondary)",background:"transparent",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                  {storeList.every(s=>selected[s.store])?"Deselect all":"Select all"}
+                </button>
+              </div>
+
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {storeList.map(store=>{
+                  const mk=store.store+msgType,msg=msgCache[mk],isExp=expanded===store.store,
+                        isSending=sending[store.store],sentSt=sent[store.store];
+                  return <div key={store.store} style={{background:"var(--color-background-secondary)",border:`0.5px solid ${isExp?cfg.border:"var(--color-border-tertiary)"}`,borderRadius:"var(--border-radius-md)",overflow:"hidden"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",flexWrap:"wrap"}}>
+                      <input type="checkbox" checked={!!selected[store.store]} onChange={e=>setSelected(p=>({...p,[store.store]:e.target.checked}))} style={{cursor:"pointer",flexShrink:0}}/>
+                      <div style={{flex:1,minWidth:130}}>
+                        <div style={{fontWeight:500,fontSize:13}}>{store.store}</div>
+                        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:1}}>
+                          {store.state} · {store.responsible}
+                          {store.due_date&&<span style={{marginLeft:8,color:cfg.color,fontWeight:500}}>
+                            {store.d<0?`${Math.abs(store.d)}d overdue`:store.d===0?"Due today":`${store.d}d left`}
+                          </span>}
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:5,fontSize:11,flexShrink:0,flexWrap:"wrap"}}>
+                        {!store.has_invoice&&<span style={{background:"#F1EFE8",color:"#5F5E5A",padding:"2px 6px",borderRadius:8}}>No invoice</span>}
+                        {store.has_invoice&&!store.amount&&<span style={{background:"#FAEEDA",color:"#854F0B",padding:"2px 6px",borderRadius:8}}>Amt missing</span>}
+                        {store.amount&&<span style={{background:"var(--color-background-primary)",color:"var(--color-text-secondary)",padding:"2px 6px",borderRadius:8}}>₹{store.amount.toLocaleString("en-IN")}</span>}
+                      </div>
+                      <div style={{display:"flex",gap:5,flexShrink:0}}>
+                        <button onClick={()=>toggleExpand(store)} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-primary)",cursor:"pointer"}}>
+                          {isExp?"▲ Hide":"💬 Preview"}
+                        </button>
+                        {msgType==="whatsapp"&&waNum[store.responsible]&&msg&&msg!=="loading"&&(
+                          <a href={`https://wa.me/${waNum[store.responsible].replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"
+                            style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:"#25D366",color:"#fff",textDecoration:"none"}}>WA ↗</a>
+                        )}
+                        {msgType==="email"&&(
+                          <button onClick={()=>handleSend(store)} disabled={isSending||sentSt==="sent"} style={{fontSize:11,padding:"4px 9px",borderRadius:"var(--border-radius-sm)",background:sentSt==="sent"?"#EAF3DE":sentSt==="failed"?"#FCEBEB":"#185FA5",color:sentSt?(sentSt==="sent"?"#3B6D11":"#A32D2D"):"#fff",border:"none",cursor:"pointer"}}>
+                            {isSending?"…":sentSt==="sent"?"✓":sentSt==="failed"?"✗":"✉"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {isExp&&<div style={{borderTop:"0.5px solid var(--color-border-tertiary)",padding:"10px 12px",background:"var(--color-background-primary)"}}>
+                      {!msg||msg==="loading"?(
+                        <div style={{fontSize:12,color:"var(--color-text-tertiary)",display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--color-border-secondary)",borderTopColor:"var(--color-text-primary)",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+                          Generating {msgType} message…
+                        </div>
+                      ):(
+                        <div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                            <span style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary)",textTransform:"uppercase",letterSpacing:".04em"}}>{msgType==="whatsapp"?"WhatsApp Message":"Email Body"}</span>
+                            <div style={{display:"flex",gap:5}}>
+                              <button onClick={()=>copyMsg(mk,msg)} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>
+                                {copied[mk]?"✓ Copied":"Copy"}
+                              </button>
+                              <button onClick={async()=>{setMsgCache(p=>({...p,[mk]:"loading"}));const m=await apiMsg(store,msgType);setMsgCache(p=>({...p,[mk]:m}));}} style={{fontSize:11,padding:"2px 8px",borderRadius:"var(--border-radius-sm)",border:"0.5px solid var(--color-border-secondary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>↻</button>
+                            </div>
+                          </div>
+                          <div style={{fontSize:13,lineHeight:1.65,whiteSpace:"pre-wrap",background:"var(--color-background-secondary)",padding:"9px 11px",borderRadius:"var(--border-radius-sm)"}}>{msg}</div>
+                          {msgType==="whatsapp"&&!waNum[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s WhatsApp in Settings for a direct send link.</div>}
+                          {msgType==="email"&&!contacts[store.responsible]&&<div style={{fontSize:11,color:"var(--color-text-tertiary)",marginTop:5}}>💡 Add {store.responsible}'s email in Settings to send directly.</div>}
+                        </div>
+                      )}
+                    </div>}
+                  </div>;
+                })}
+              </div>
+            </div>;
+          })}
+        </div>}
+      </>}
 
       <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
     </div>
